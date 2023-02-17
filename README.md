@@ -1,12 +1,14 @@
-# Quilt Installer for Official Minecraft Launcher
+# Ornithe Installer for Official Minecraft Launcher
 
-This repository contains the source code for the quilt installer targeting the official Minecraft launcher.
+This repository contains the source code for the ornithe installer targeting the official Minecraft launcher.
 
 # Using the installer
 
 This needs to be written or link to a page somewhere on the site :)
 
 # Behind the covers
+
+This project is forked from QuiltMC, making a few cosmetic changes and adding support for the OrnitheMC meta endpoints.
 
 The core of the installer is written in java, this was chosen for the moment due to swing having a wide range of support.
 
