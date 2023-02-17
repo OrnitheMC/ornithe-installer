@@ -100,23 +100,24 @@ public final class QuiltMeta {
 		reader.endArray();
 
 		return ret;
-	}, MetaType.FABRIC);
+	}, MetaType.ORNITHE);
 
-	public static final String DEFAULT_META_URL = "https://meta.quiltmc.org";
+	public static final String DEFAULT_ORNITHE_META_URL = "https://meta.ornithemc.net";
+	public static final String DEFAULT_QUILT_META_URL = "https://meta.quiltmc.org";
 	public static final String DEFAULT_FABRIC_META_URL = "https://meta.fabricmc.net";
 	private final Map<Endpoint<?>, Object> endpoints;
 
-	public static CompletableFuture<QuiltMeta> create(String baseQuiltMetaUrl, String baseFabricMetaUrl, Set<Endpoint<?>> endpoints) {
+	public static CompletableFuture<QuiltMeta> create(String baseOrnitheMetaUrl, String baseQuiltMetaUrl, String baseFabricMetaUrl, Set<Endpoint<?>> endpoints) {
 		Map<Endpoint<?>, CompletableFuture<?>> futures = new HashMap<>();
 		for (Endpoint<?> endpoint : endpoints) {
 			futures.put(endpoint, CompletableFuture.supplyAsync(() -> {
 				try {
-					URL url;
-					if (endpoint.metaType == MetaType.FABRIC) {
-						url = new URL(baseFabricMetaUrl + endpoint.endpointPath);
-					} else {
-						url = new URL(baseQuiltMetaUrl + endpoint.endpointPath);
-					}
+					String baseMetaUrl = switch (endpoint.metaType) {
+						case FABRIC  -> baseFabricMetaUrl;
+						case QUILT   -> baseQuiltMetaUrl;
+						case ORNITHE -> baseOrnitheMetaUrl;
+					};
+					URL url = new URL(baseMetaUrl + endpoint.endpointPath);
 
 					URLConnection connection = url.openConnection();
 
@@ -226,6 +227,7 @@ public final class QuiltMeta {
 
 	public enum MetaType {
 		FABRIC,
-		QUILT
+		QUILT,
+		ORNITHE
 	}
 }

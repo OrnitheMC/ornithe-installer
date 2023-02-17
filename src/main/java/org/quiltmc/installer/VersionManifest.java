@@ -40,7 +40,7 @@ import org.quiltmc.json5.JsonToken;
  */
 // TODO: Abstract to another library for sharing logic with meta?
 public final class VersionManifest implements Iterable<VersionManifest.Version> {
-	private static final String LAUNCHER_META_URL = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
+	private static final String LAUNCHER_META_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
 	private final Version latestRelease;
 	private final Version latestSnapshot;
 	private final Map<String, Version> versions;

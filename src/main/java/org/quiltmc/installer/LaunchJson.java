@@ -36,7 +36,7 @@ public final class LaunchJson {
 	public static final String LOADER_ARTIFACT_NAME = "quilt-loader";
 
 	public static CompletableFuture<String> get(String gameVersion, String loaderVersion, String endpoint) {
-		String rawUrl = QuiltMeta.DEFAULT_META_URL + String.format(endpoint, gameVersion, loaderVersion);
+		String rawUrl = QuiltMeta.DEFAULT_QUILT_META_URL + String.format(endpoint, gameVersion, loaderVersion);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -71,8 +71,8 @@ public final class LaunchJson {
 			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
 			for (Map<String, String> library : libraries) {
 				if (library.get("name").startsWith("org.quiltmc:hashed")) {
-					library.replace("name", library.get("name").replace("org.quiltmc:hashed", "net.fabricmc:intermediary"));
-					library.replace("url", "https://maven.fabricmc.net/");
+					library.replace("name", library.get("name").replace("org.quiltmc:hashed", "net.ornithemc:calamus-intermediary"));
+					library.replace("url", "https://maven.ornithemc.net/releases/");
 				}
 			}
 			StringWriter writer = new StringWriter();

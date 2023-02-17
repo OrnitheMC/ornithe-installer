@@ -50,7 +50,7 @@ public final class ListVersions extends Action<Void> {
 				.thenAccept(this::displayMinecraftVerions)
 				.exceptionally(this::handleMinecraftVersionExceptions);
 
-		CompletableFuture<Void> quiltMeta = QuiltMeta.create(QuiltMeta.DEFAULT_META_URL, QuiltMeta.DEFAULT_FABRIC_META_URL, Collections.singleton(QuiltMeta.LOADER_VERSIONS_ENDPOINT))
+		CompletableFuture<Void> quiltMeta = QuiltMeta.create(QuiltMeta.DEFAULT_ORNITHE_META_URL, QuiltMeta.DEFAULT_QUILT_META_URL, QuiltMeta.DEFAULT_FABRIC_META_URL, Collections.singleton(QuiltMeta.LOADER_VERSIONS_ENDPOINT))
 				.thenAccept(this::displayLoaderVersions)
 				.exceptionally(e -> {
 					e.printStackTrace();
@@ -97,7 +97,7 @@ public final class ListVersions extends Action<Void> {
 			}
 		} else if (exc instanceof ParseException) {
 			eprintln(Localization.get("cli.lookup.failed.minecraft.malformed.1"));
-			eprintln(Localization.createFrom("cli.lookup.failed.minecraft.malformed.2", "https://github.com/QuiltMC/quilt-installer"));
+			eprintln(Localization.createFrom("cli.lookup.failed.minecraft.malformed.2", "https://github.com/OrnitheMC/ornithe-installer"));
 			exc.printStackTrace();
 		} else {
 			// Don't know, just spit it out
