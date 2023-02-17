@@ -28,7 +28,7 @@ const INSTALLER_LAST_RESORT_URL: &str = "https://quiltmc.org/"; // TODO: Fill in
 const OS_ISSUES_URL: &str = "https://quiltmc.org/"; // TODO: Fill in URL
 
 /// The bundled installer jar, see main entrypoint for why we include the bytes of the installer jar.
-const INSTALLER_JAR: &[u8] = include_bytes!("../../build/native-quilt-installer.jar");
+const INSTALLER_JAR: &[u8] = include_bytes!("../../build/native-ornithe-installer.jar");
 
 // TODO: Some things to do in the future
 //  Error dialog localization, possibly this for getting the OS's locale? https://github.com/i509VCB/os-locale
@@ -49,7 +49,7 @@ fn main() {
 
 	// Generate a randomish file name so we can write the bundled jar to it for launching.
 	let mut installer_jar_name = random::<u32>().to_string();
-	installer_jar_name.push_str("quilt-installer.jar");
+	installer_jar_name.push_str("ornithe-installer.jar");
 
 	let installer_jar = temp_dir().join(installer_jar_name);
 

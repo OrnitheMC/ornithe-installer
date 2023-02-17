@@ -1,4 +1,4 @@
-# Quilt Installer Native Launch 
+# Ornithe Installer Native Launch 
 
 This folder contains the rust project used to launch the installer on Windows and macOS.
 

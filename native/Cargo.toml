@@ -1,8 +1,9 @@
 [package]
-name = "quilt-installer"
+name = "ornithe-installer"
 version = "0.1.0"
 authors = [
-    "QuiltMC"
+    "QuiltMC",
+    "OrnitheMC"
 ]
 
 edition = "2018"

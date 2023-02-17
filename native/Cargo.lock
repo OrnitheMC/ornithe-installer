@@ -344,7 +344,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "quilt-installer"
+name = "ornithe-installer"
 version = "0.1.0"
 dependencies = [
  "dirs",

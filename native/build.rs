@@ -7,8 +7,8 @@ fn main() {
 
 		winres::WindowsResource::new()
 			.set_icon("resources/windows/icon.ico")
-			.set("ProductName", "Quilt Installer")
-			.set("CompanyName", "The Quilt Project")
+			.set("ProductName", "Ornithe Installer")
+			.set("CompanyName", "The Ornithe Project")
 			.set("LegalCopyright", "Apache License Version 2.0")
 			.compile()
 			.expect("Failed to set windows resources");
