@@ -112,10 +112,19 @@ public final class QuiltMeta {
 		for (Endpoint<?> endpoint : endpoints) {
 			futures.put(endpoint, CompletableFuture.supplyAsync(() -> {
 				try {
-					String baseMetaUrl = switch (endpoint.metaType) {
-						case FABRIC  -> baseFabricMetaUrl;
-						case QUILT   -> baseQuiltMetaUrl;
-						case ORNITHE -> baseOrnitheMetaUrl;
+					String baseMetaUrl;
+					switch (endpoint.metaType) {
+					case FABRIC:
+						baseMetaUrl = baseFabricMetaUrl;
+						break;
+					case QUILT:
+						baseMetaUrl = baseQuiltMetaUrl;
+						break;
+					case ORNITHE:
+						baseMetaUrl = baseOrnitheMetaUrl;
+						break;
+					default:
+						throw new IllegalStateException("unknown meta type " + endpoint.metaType);
 					};
 					URL url = new URL(baseMetaUrl + endpoint.endpointPath);
 
