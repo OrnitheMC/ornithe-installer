@@ -11,7 +11,7 @@ plugins {
 	id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
-group = "org.quiltmc"
+group = "net.ornithemc"
 val env = System.getenv()
 version = if (env["SNAPSHOTS_URL"] != null) {
 	"0-SNAPSHOT"
@@ -62,7 +62,7 @@ tasks.compileJava {
 
 tasks.jar {
 	manifest {
-		attributes["Implementation-Title"] = "Quilt-Installer"
+		attributes["Implementation-Title"] = "Ornithe-Installer"
 		attributes["Implementation-Version"] = project.version
 		attributes["Main-Class"] = "org.quiltmc.installer.Main"
 	}
@@ -87,8 +87,8 @@ val copyForNative = tasks.register<Copy>("copyForNative") {
 	into(file("build"))
 
 	rename {
-		return@rename if (it.contains("quilt-installer")) {
-			"native-quilt-installer.jar"
+		return@rename if (it.contains("ornithe-installer")) {
+			"native-ornithe-installer.jar"
 		} else {
 			it
 		}
@@ -107,11 +107,11 @@ publishing {
 			val architecture = env["TARGET"]
 
 			create<MavenPublication>("mavenNatives") {
-				groupId = "org.quiltmc.quilt-installer-native-bootstrap"
+				groupId = "net.ornithemc.ornithe-installer-native-bootstrap"
 				artifactId = "windows-$architecture"
 
 				artifact {
-					file("$projectDir/native/target/$architecture-pc-windows-msvc/release/quilt-installer.exe")
+					file("$projectDir/native/target/$architecture-pc-windows-msvc/release/ornithe-installer.exe")
 				}
 			}
 		}

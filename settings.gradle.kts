@@ -1,1 +1,1 @@
-rootProject.name = "quilt-installer"
+rootProject.name = "ornithe-installer"
