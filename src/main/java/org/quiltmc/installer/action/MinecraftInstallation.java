@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.installer.QuiltMeta;
+import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
 public final class MinecraftInstallation {
@@ -45,15 +45,15 @@ public final class MinecraftInstallation {
 			throw new IllegalArgumentException(String.format("Minecraft version %s does not exist", gameVersion));
 		});
 
-		Set<QuiltMeta.Endpoint<?>> endpoints = new HashSet<>();
-		endpoints.add(QuiltMeta.LOADER_VERSIONS_ENDPOINT);
-		endpoints.add(QuiltMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+		Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
+		endpoints.add(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+		endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
-		CompletableFuture<QuiltMeta> metaFuture = QuiltMeta.create(QuiltMeta.DEFAULT_ORNITHE_META_URL, QuiltMeta.DEFAULT_QUILT_META_URL, QuiltMeta.DEFAULT_FABRIC_META_URL, endpoints);
+		CompletableFuture<OrnitheMeta> metaFuture = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints);
 
 		// Verify we actually have intermediary for the specified version
 		CompletableFuture<Void> intermediary = versionManifest.thenCompose(mcVersion -> metaFuture.thenAccept(meta -> {
-			Map<String, String> intermediaryVersions = meta.getEndpoint(QuiltMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+			Map<String, String> intermediaryVersions = meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
 			if (intermediaryVersions.get(gameVersion) == null) {
 				throw new IllegalArgumentException(String.format("Minecraft version %s exists but has no intermediary", gameVersion));
@@ -61,7 +61,7 @@ public final class MinecraftInstallation {
 		}));
 
 		CompletableFuture<String> loaderVersionFuture = metaFuture.thenApply(meta -> {
-			List<String> versions = meta.getEndpoint(QuiltMeta.LOADER_VERSIONS_ENDPOINT);
+			List<String> versions = meta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
 
 			if (loaderVersion != null) {
 				if (!versions.contains(loaderVersion)) {

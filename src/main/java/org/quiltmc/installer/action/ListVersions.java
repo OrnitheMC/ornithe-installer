@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.ParseException;
-import org.quiltmc.installer.QuiltMeta;
+import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
 /**
@@ -50,7 +50,7 @@ public final class ListVersions extends Action<Void> {
 				.thenAccept(this::displayMinecraftVerions)
 				.exceptionally(this::handleMinecraftVersionExceptions);
 
-		CompletableFuture<Void> quiltMeta = QuiltMeta.create(QuiltMeta.DEFAULT_ORNITHE_META_URL, QuiltMeta.DEFAULT_QUILT_META_URL, QuiltMeta.DEFAULT_FABRIC_META_URL, Collections.singleton(QuiltMeta.LOADER_VERSIONS_ENDPOINT))
+		CompletableFuture<Void> quiltMeta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(OrnitheMeta.LOADER_VERSIONS_ENDPOINT))
 				.thenAccept(this::displayLoaderVersions)
 				.exceptionally(e -> {
 					e.printStackTrace();
@@ -71,8 +71,8 @@ public final class ListVersions extends Action<Void> {
 		}
 	}
 
-	private void displayLoaderVersions(QuiltMeta meta) {
-		List<String> endpoint = meta.getEndpoint(QuiltMeta.LOADER_VERSIONS_ENDPOINT);
+	private void displayLoaderVersions(OrnitheMeta meta) {
+		List<String> endpoint = meta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
 		println(Localization.createFrom("cli.latest.loader.release", endpoint.stream().filter(version -> !version.contains("-")).findFirst().get()));
 
 		if (this.loaderBetas) {

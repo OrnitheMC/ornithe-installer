@@ -36,7 +36,7 @@ public final class LaunchJson {
 	public static final String LOADER_ARTIFACT_NAME = "quilt-loader";
 
 	public static CompletableFuture<String> get(String gameVersion, String loaderVersion, String endpoint) {
-		String rawUrl = QuiltMeta.DEFAULT_QUILT_META_URL + String.format(endpoint, gameVersion, loaderVersion);
+		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(endpoint, gameVersion, loaderVersion);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {

@@ -17,7 +17,7 @@
 package org.quiltmc.installer.gui.swing;
 
 import org.quiltmc.installer.Localization;
-import org.quiltmc.installer.QuiltMeta;
+import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
 import javax.swing.*;
@@ -105,17 +105,17 @@ public final class SwingInstaller extends JFrame {
 
 			// Start version lookup before we show the window
 			// Lookup loader and intermediary
-			Set<QuiltMeta.Endpoint<?>> endpoints = new HashSet<>();
-			endpoints.add(QuiltMeta.LOADER_VERSIONS_ENDPOINT);
-			endpoints.add(QuiltMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+			Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
+			endpoints.add(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+			endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
-			QuiltMeta.create(QuiltMeta.DEFAULT_ORNITHE_META_URL, QuiltMeta.DEFAULT_QUILT_META_URL, QuiltMeta.DEFAULT_FABRIC_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(), ((quiltMeta, manifest) -> {
-				List<String> loaderVersions = quiltMeta.getEndpoint(QuiltMeta.LOADER_VERSIONS_ENDPOINT).stream().filter(v -> {
+			OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(), ((quiltMeta, manifest) -> {
+				List<String> loaderVersions = quiltMeta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT).stream().filter(v -> {
 					// TODO HACK HACK HACK
 					// This is a hack to filter out old versions of Loader which we know will not support finding the main class.
 					return !(v.startsWith("0.16.0-beta.") && v.length() == 13 && v.charAt(12) != '9');
 				}).collect(Collectors.toList());
-				Collection<String> intermediaryVersions = quiltMeta.getEndpoint(QuiltMeta.INTERMEDIARY_VERSIONS_ENDPOINT).keySet();
+				Collection<String> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).keySet();
 
 				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 				this.serverPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);

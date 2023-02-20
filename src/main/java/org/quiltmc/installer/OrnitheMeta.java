@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import org.quiltmc.json5.JsonReader;
 import org.quiltmc.json5.JsonToken;
 
-public final class QuiltMeta {
+public final class OrnitheMeta {
 	public static final Endpoint<List<String>> LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/loader");
 	/**
 	 * An endpoint for intermediary versions.
@@ -43,7 +43,7 @@ public final class QuiltMeta {
 	 * <p>The returned map has the version as the key and the maven artifact as the value
 	 */
 	// TODO: use
-	public static final Endpoint<Map<String, String>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v2/versions/intermediary", reader -> {
+	public static final Endpoint<Map<String, String>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v3/versions/intermediary", reader -> {
 		Map<String, String> ret = new LinkedHashMap<>();
 
 		if (reader.peek() != JsonToken.BEGIN_ARRAY) {
@@ -100,32 +100,16 @@ public final class QuiltMeta {
 		reader.endArray();
 
 		return ret;
-	}, MetaType.ORNITHE);
+	});
 
-	public static final String DEFAULT_ORNITHE_META_URL = "https://meta.ornithemc.net";
-	public static final String DEFAULT_QUILT_META_URL = "https://meta.quiltmc.org";
-	public static final String DEFAULT_FABRIC_META_URL = "https://meta.fabricmc.net";
+	public static final String ORNITHE_META_URL = "https://meta.ornithemc.net";
 	private final Map<Endpoint<?>, Object> endpoints;
 
-	public static CompletableFuture<QuiltMeta> create(String baseOrnitheMetaUrl, String baseQuiltMetaUrl, String baseFabricMetaUrl, Set<Endpoint<?>> endpoints) {
+	public static CompletableFuture<OrnitheMeta> create(String baseMetaUrl, Set<Endpoint<?>> endpoints) {
 		Map<Endpoint<?>, CompletableFuture<?>> futures = new HashMap<>();
 		for (Endpoint<?> endpoint : endpoints) {
 			futures.put(endpoint, CompletableFuture.supplyAsync(() -> {
 				try {
-					String baseMetaUrl;
-					switch (endpoint.metaType) {
-					case FABRIC:
-						baseMetaUrl = baseFabricMetaUrl;
-						break;
-					case QUILT:
-						baseMetaUrl = baseQuiltMetaUrl;
-						break;
-					case ORNITHE:
-						baseMetaUrl = baseOrnitheMetaUrl;
-						break;
-					default:
-						throw new IllegalStateException("unknown meta type " + endpoint.metaType);
-					};
 					URL url = new URL(baseMetaUrl + endpoint.endpointPath);
 
 					URLConnection connection = url.openConnection();
@@ -150,7 +134,7 @@ public final class QuiltMeta {
 				resolvedEndpoints.put(entry.getKey(), entry.getValue().join());
 			}
 
-			return new QuiltMeta(baseQuiltMetaUrl, resolvedEndpoints);
+			return new OrnitheMeta(baseMetaUrl, resolvedEndpoints);
 		});
 	}
 
@@ -197,10 +181,10 @@ public final class QuiltMeta {
 			reader.endArray();
 
 			return versions;
-		}, MetaType.QUILT);
+		});
 	}
 
-	private QuiltMeta(String baseMetaUrl, Map<Endpoint<?>, Object> endpoints) {
+	private OrnitheMeta(String baseMetaUrl, Map<Endpoint<?>, Object> endpoints) {
 		this.endpoints = endpoints;
 	}
 
@@ -220,23 +204,15 @@ public final class QuiltMeta {
 	public static final class Endpoint<T> {
 		private final String endpointPath;
 		private final ThrowingFunction<JsonReader, T, ParseException> deserializer;
-		private final MetaType metaType;
 
-		Endpoint(String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer, MetaType metaType) {
+		Endpoint(String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
 			this.endpointPath = endpointPath;
 			this.deserializer = deserializer;
-			this.metaType = metaType;
 		}
 
 		@Override
 		public String toString() {
-			return "Endpoint{endpointPath=\"" + this.endpointPath + "\",metaType=\"" + metaType + "\"}";
+			return "Endpoint{endpointPath=\"" + this.endpointPath + "\"";
 		}
-	}
-
-	public enum MetaType {
-		FABRIC,
-		QUILT,
-		ORNITHE
 	}
 }
