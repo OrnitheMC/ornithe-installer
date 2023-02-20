@@ -198,8 +198,10 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			if (id == null) throw new ParseException("Version id is required", reader);
 			if (type == null) throw new ParseException("Version type is required", reader);
 			if (url == null) throw new ParseException("Version url is required", reader);
-			if (time == null) throw new ParseException("Version time is required", reader);
-			if (releaseTime == null) throw new ParseException("Version release time is required", reader);
+			// neither of these are actually used and versions prior to 1.2.5 do not
+			// always have this information in the manifest so we just ignore it
+//			if (time == null) throw new ParseException("Version time is required", reader);
+//			if (releaseTime == null) throw new ParseException("Version release time is required", reader);
 
 			versions.put(id, new Version(id, type, url, time, releaseTime));
 		}
