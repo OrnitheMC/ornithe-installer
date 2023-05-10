@@ -32,9 +32,9 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.OsPaths;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LauncherProfiles;
-import org.quiltmc.installer.VersionManifest;
 
 /**
  * An action which installs a new client instance.
@@ -85,9 +85,9 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		 * 7. (Optional) create profile if needed
 		 */
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(this.minecraftVersion, this.loaderVersion);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderVersion);
 
-		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(this.minecraftVersion, installationInfo.loaderVersion(), "/v3/versions/loader/%s/%s/profile/json")).thenAccept(launchJson -> {
+		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, this.minecraftVersion, installationInfo.loaderVersion())).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
 			try {

@@ -24,13 +24,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.json5.JsonReader;
 import org.quiltmc.json5.JsonToken;
@@ -147,6 +145,7 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			String url = null;
 			String time = null;
 			String releaseTime = null;
+			String details = null;
 
 			while (reader.hasNext()) {
 				String key = reader.nextName();
@@ -187,6 +186,13 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 					releaseTime = reader.nextString();
 					break;
+				case "details":
+					if (reader.peek() != JsonToken.STRING) {
+						throw new ParseException("Details url must be a string", reader);
+					}
+
+					details = reader.nextString();
+					break;
 				// v2 adds sha1 and complianceLevel, we do not need those
 				default:
 					reader.skipValue();
@@ -202,11 +208,60 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			// always have this information in the manifest so we just ignore it
 //			if (time == null) throw new ParseException("Version time is required", reader);
 //			if (releaseTime == null) throw new ParseException("Version release time is required", reader);
+			if (details == null) throw new ParseException("Details url is required", reader);
 
-			versions.put(id, new Version(id, type, url, time, releaseTime));
+			versions.put(id, new Version(id, type, url, time, releaseTime, details));
 		}
 
 		reader.endArray();
+	}
+
+	private static VersionDetails readDetails(Version version) {
+		try {
+			URL url = new URL(version.detailsUrl);
+			URLConnection connection = url.openConnection();
+
+			InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
+
+			try (JsonReader reader = JsonReader.json(new BufferedReader(stream))) {
+				return readDetails(version, reader);
+			}
+		} catch (IOException e) {
+			throw new UncheckedIOException(e); // Handled via .exceptionally(...)
+		}
+	}
+
+	private static VersionDetails readDetails(Version version, JsonReader reader) throws IOException, ParseException {
+		if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+			throw new ParseException("Version Details was invalid type", reader);
+		}
+
+		@Nullable
+		Boolean sharedMappings = null;
+
+		reader.beginObject();
+
+		while (reader.hasNext()) {
+			String key = reader.nextName();
+
+			switch (key) {
+			case "sharedMappings":
+				if (reader.peek() != JsonToken.BOOLEAN) {
+					throw new ParseException("sharedMappings must be a boolean", reader);
+				}
+
+				sharedMappings = reader.nextBoolean();
+				break;
+			default:
+				reader.skipValue();
+			}
+		}
+
+		reader.endObject();
+
+		if (sharedMappings == null) throw new ParseException("sharedMappings is required", reader);
+
+		return new VersionDetails(version, sharedMappings);
 	}
 
 	private VersionManifest(Version latestRelease, Version latestSnapshot, Map<String, Version> versions) {
@@ -257,17 +312,25 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 		private final String url;
 		private final String time;
 		private final String releaseTime;
+		private final String detailsUrl;
 
-		Version(String id, String type, String url, String time, String releaseTime) {
+		private VersionDetails details;
+
+		Version(String id, String type, String url, String time, String releaseTime, String details) {
 			this.id = id;
 			this.type = type;
 			this.url = url;
 			this.time = time;
 			this.releaseTime = releaseTime;
+			this.detailsUrl = details;
 		}
 
 		public String id() {
 			return this.id;
+		}
+
+		public String id(GameSide side) {
+			return this.details().sharedMappings() ? this.id : (this.id + "-" + side.id());
 		}
 
 		public String type() {
@@ -284,6 +347,32 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		public String releaseTime() {
 			return this.releaseTime;
+		}
+
+		public VersionDetails details() {
+			if (this.details == null) {
+				this.details = readDetails(this);
+			}
+
+			return this.details;
+		}
+	}
+
+	public static final class VersionDetails {
+		private final Version version;
+		private final boolean sharedMappings;
+
+		VersionDetails(Version version, boolean sharedMappings) {
+			this.version = version;
+			this.sharedMappings = sharedMappings;
+		}
+
+		public Version version() {
+			return this.version;
+		}
+
+		public boolean sharedMappings() {
+			return this.sharedMappings;
 		}
 	}
 }

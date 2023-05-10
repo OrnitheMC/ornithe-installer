@@ -35,6 +35,7 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 
 import org.jetbrains.annotations.Nullable;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
 
@@ -80,13 +81,13 @@ abstract class AbstractPanel extends JPanel {
 		return this.intermediaryVersions;
 	}
 
-	static void populateMinecraftVersions(JComboBox<String> comboBox, VersionManifest manifest, Collection<String> intermediaryVersions, boolean snapshots) {
+	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Collection<String> intermediaryVersions, boolean snapshots) {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
 		for (VersionManifest.Version version : manifest) {
 			if (version.type().equals("release") || (version.type().equals("snapshot") && snapshots)) {
-				if (intermediaryVersions.contains(version.id())) {
+				if (intermediaryVersions.contains(version.id(side))) {
 					comboBox.addItem(version.id());
 				}
 			}
@@ -95,7 +96,7 @@ abstract class AbstractPanel extends JPanel {
 		comboBox.setEnabled(true);
 	}
 
-	static void populateLoaderVersions(JComboBox<String> comboBox, List<String> loaderVersions, boolean betas) {
+	static void populateLoaderVersions(GameSide side, JComboBox<String> comboBox, List<String> loaderVersions, boolean betas) {
 		comboBox.removeAllItems();
 
 		for (String loaderVersion : loaderVersions) {

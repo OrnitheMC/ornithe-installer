@@ -33,9 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -45,14 +43,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.jetbrains.annotations.Nullable;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.VersionManifest;
@@ -102,11 +99,11 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 			println(String.format("Installing server launcher for %s with loader %s", this.minecraftVersion, this.loaderVersion));
 		}
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(this.minecraftVersion, this.loaderVersion);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderVersion);
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(this.minecraftVersion, installationInfo.loaderVersion(), "/v3/versions/loader/%s/%s/server/json");
+			return LaunchJson.get(GameSide.SERVER, this.minecraftVersion, installationInfo.loaderVersion());
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 

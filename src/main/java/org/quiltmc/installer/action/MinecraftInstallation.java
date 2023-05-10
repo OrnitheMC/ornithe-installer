@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.jetbrains.annotations.Nullable;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
@@ -36,7 +37,7 @@ public final class MinecraftInstallation {
 	 * @param loaderVersion the override for the loader version to use
 	 * @return a future containing the loader version to use
 	 */
-	public static CompletableFuture<InstallationInfo> getInfo(String gameVersion, @Nullable String loaderVersion) {
+	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, @Nullable String loaderVersion) {
 		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create().thenApply(manifest -> {
 			if (manifest.getVersion(gameVersion) != null) {
 				return manifest;
@@ -52,13 +53,17 @@ public final class MinecraftInstallation {
 		CompletableFuture<OrnitheMeta> metaFuture = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints);
 
 		// Verify we actually have intermediary for the specified version
-		CompletableFuture<Void> intermediary = versionManifest.thenCompose(mcVersion -> metaFuture.thenAccept(meta -> {
-			Map<String, String> intermediaryVersions = meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+		CompletableFuture<Void> intermediary = versionManifest.thenCompose(manifest -> {
+			VersionManifest.Version version = manifest.getVersion(gameVersion);
 
-			if (intermediaryVersions.get(gameVersion) == null) {
-				throw new IllegalArgumentException(String.format("Minecraft version %s exists but has no intermediary", gameVersion));
-			}
-		}));
+			return metaFuture.thenAccept(meta -> {
+				Map<String, String> intermediaryVersions = meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+
+				if (intermediaryVersions.get(version.id(side)) == null) {
+					throw new IllegalArgumentException(String.format("Minecraft version %s exists but has no intermediary", gameVersion));
+				}
+			});
+		});
 
 		CompletableFuture<String> loaderVersionFuture = metaFuture.thenApply(meta -> {
 			List<String> versions = meta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);

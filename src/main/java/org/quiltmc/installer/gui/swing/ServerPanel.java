@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import javax.swing.*;
 
 import org.jetbrains.annotations.Nullable;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
@@ -75,7 +76,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 				// Versions are already loaded, repopulate the combo box
 				if (this.manifest() != null) {
 					this.showSnapshots = e.getStateChange() == ItemEvent.SELECTED;
-					populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+					populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
 				}
 			});
 		}
@@ -95,7 +96,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 				// Versions are already loaded, repopulate the combo box
 				if (this.loaderVersions() != null) {
 					this.showLoaderBetas = e.getStateChange() == ItemEvent.SELECTED;
-					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(), this.showLoaderBetas);
+					populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, this.loaderVersions(), this.showLoaderBetas);
 				}
 			});
 		}
@@ -154,10 +155,10 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 	void receiveVersions(VersionManifest manifest, List<String> loaderVersions, Collection<String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
+		populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
 		updateFlags();
 		this.showSnapshotsCheckBox.setEnabled(true);
-		populateLoaderVersions(this.loaderVersionSelector, loaderVersions, this.showLoaderBetas);
+		populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, loaderVersions, this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);
 
 		this.installButton.setText(Localization.get("gui.install"));

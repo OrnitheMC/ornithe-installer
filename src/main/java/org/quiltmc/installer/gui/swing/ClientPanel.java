@@ -19,7 +19,6 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -32,6 +31,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import org.jetbrains.annotations.Nullable;
+import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.OsPaths;
 import org.quiltmc.installer.VersionManifest;
@@ -71,7 +71,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				// Versions are already loaded, repopulate the combo box
 				if (this.manifest() != null) {
 					this.showSnapshots = e.getStateChange() == ItemEvent.SELECTED;
-					populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+					populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
 				}
 			});
 		}
@@ -91,7 +91,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.showLoaderBetasCheckBox.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
 					this.showLoaderBetas = e.getStateChange() == ItemEvent.SELECTED;
-					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(), this.showLoaderBetas);
+					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(), this.showLoaderBetas);
 				}
 			});
 		}
@@ -158,9 +158,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	void receiveVersions(VersionManifest manifest, List<String> loaderVersions, Collection<String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
+		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
 		this.showSnapshotsCheckBox.setEnabled(true);
-		populateLoaderVersions(this.loaderVersionSelector, loaderVersions, this.showLoaderBetas);
+		populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, loaderVersions, this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);
 
 		this.installButton.setText(Localization.get("gui.install"));
