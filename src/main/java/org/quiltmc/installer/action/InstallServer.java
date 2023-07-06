@@ -103,7 +103,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(GameSide.SERVER, this.minecraftVersion, installationInfo.loaderVersion());
+			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.loaderVersion());
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 

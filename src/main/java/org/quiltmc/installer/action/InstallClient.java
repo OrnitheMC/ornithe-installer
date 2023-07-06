@@ -87,7 +87,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 
 		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderVersion);
 
-		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, this.minecraftVersion, installationInfo.loaderVersion())).thenAccept(launchJson -> {
+		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.loaderVersion())).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
 			try {
