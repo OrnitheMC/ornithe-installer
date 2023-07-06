@@ -86,7 +86,12 @@ abstract class AbstractPanel extends JPanel {
 		comboBox.removeAllItems();
 
 		for (VersionManifest.Version version : manifest) {
-			if (version.type().equals("release") || (version.type().equals("snapshot") && snapshots)) {
+			if (version.type().equals("release")
+				|| (version.type().equals("snapshot") && snapshots)
+				|| (version.type().equals("old_beta") && snapshots)
+				|| (version.type().equals("old_alpha") && snapshots)
+				|| (version.type().equals("alpha_server") && snapshots)
+				|| (version.type().equals("classic_server") && snapshots)) {
 				if (intermediaryVersions.contains(version.id(side))) {
 					comboBox.addItem(version.id());
 				}
