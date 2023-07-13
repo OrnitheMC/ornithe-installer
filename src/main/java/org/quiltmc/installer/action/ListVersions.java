@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.ParseException;
 import org.quiltmc.installer.OrnitheMeta;
@@ -33,13 +34,15 @@ import org.quiltmc.installer.VersionManifest;
  * An action which lists all installable versions of Minecraft.
  */
 public final class ListVersions extends Action<Void> {
+	private final LoaderType loaderType;
 	/**
 	 * Whether to display snapshot Minecraft versions.
 	 */
 	private final boolean minecraftSnapshots;
 	private final boolean loaderBetas;
 
-	ListVersions(boolean minecraftSnapshots, boolean loaderBetas) {
+	ListVersions(LoaderType loaderType, boolean minecraftSnapshots, boolean loaderBetas) {
+		this.loaderType = loaderType;
 		this.minecraftSnapshots = minecraftSnapshots;
 		this.loaderBetas = loaderBetas;
 	}
@@ -50,7 +53,7 @@ public final class ListVersions extends Action<Void> {
 				.thenAccept(this::displayMinecraftVerions)
 				.exceptionally(this::handleMinecraftVersionExceptions);
 
-		CompletableFuture<Void> quiltMeta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(OrnitheMeta.LOADER_VERSIONS_ENDPOINT))
+		CompletableFuture<Void> quiltMeta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(OrnitheMeta.loaderVersionsEndpoint(this.loaderType)))
 				.thenAccept(this::displayLoaderVersions)
 				.exceptionally(e -> {
 					e.printStackTrace();
@@ -72,7 +75,7 @@ public final class ListVersions extends Action<Void> {
 	}
 
 	private void displayLoaderVersions(OrnitheMeta meta) {
-		List<String> endpoint = meta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+		List<String> endpoint = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(this.loaderType));
 		println(Localization.createFrom("cli.latest.loader.release", endpoint.stream().filter(version -> !version.contains("-")).findFirst().get()));
 
 		if (this.loaderBetas) {

@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.CliInstaller;
+import org.quiltmc.installer.LoaderType;
 
 /**
  * Represents an installer action to be performed.
@@ -84,16 +85,16 @@ public abstract class Action<M> {
 		}
 	};
 
-	public static Action<Void> listVersions(boolean minecraftSnapshots, boolean loaderBetas) {
-		return new ListVersions(minecraftSnapshots, loaderBetas);
+	public static Action<Void> listVersions(LoaderType loaderType, boolean minecraftSnapshots, boolean loaderBetas) {
+		return new ListVersions(loaderType, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, @Nullable String loaderVersion, @Nullable String installDir, boolean generateProfile) {
-		return new InstallClient(minecraftVersion, loaderVersion, installDir, generateProfile);
+	public static InstallClient installClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable String installDir, boolean generateProfile) {
+		return new InstallClient(minecraftVersion, loaderType, loaderVersion, installDir, generateProfile);
 	}
 
-	public static InstallServer installServer(String minecraftVersion, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
-		return new InstallServer(minecraftVersion, loaderVersion, installDir, createScripts, installServer);
+	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
+		return new InstallServer(minecraftVersion, loaderType, loaderVersion, installDir, createScripts, installServer);
 	}
 
 	static void println(String message) {

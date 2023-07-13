@@ -36,7 +36,20 @@ import org.quiltmc.json5.JsonReader;
 import org.quiltmc.json5.JsonToken;
 
 public final class OrnitheMeta {
-	public static final Endpoint<List<String>> LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/loader");
+	public static final Endpoint<List<String>> FABRIC_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/fabric-loader");
+	public static final Endpoint<List<String>> QUILT_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/quilt-loader");
+
+	public static Endpoint<List<String>> loaderVersionsEndpoint(LoaderType type) {
+		switch (type) {
+		case FABRIC:
+			return FABRIC_LOADER_VERSIONS_ENDPOINT;
+		case QUILT:
+			return QUILT_LOADER_VERSIONS_ENDPOINT;
+		}
+
+		throw new IllegalStateException("no endpoints for loader type " + type.getName());
+	}
+
 	/**
 	 * An endpoint for intermediary versions.
 	 *

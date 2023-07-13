@@ -71,7 +71,20 @@ public final class CliInstaller {
 			return Action.DISPLAY_HELP;
 		case "listVersions":
 			if (split.size() == 0) {
-				return Action.listVersions(false, false);
+				System.err.println("Loader type is required");
+				return Action.DISPLAY_HELP;
+			}
+
+			String rawType = split.remove();
+			LoaderType type = LoaderType.valueOf(rawType.toUpperCase());
+
+			if (type == null) {
+				System.err.println("Unknown loader type: " + rawType);
+				return Action.DISPLAY_HELP;
+			}
+
+			if (split.size() == 0) {
+				return Action.listVersions(type, false, false);
 			}
 
 			boolean minecraftSnapshots = false;
@@ -94,7 +107,7 @@ public final class CliInstaller {
 				}
 			}
 
-			return !hasError ? Action.listVersions(minecraftSnapshots, loaderBetas) : Action.DISPLAY_HELP;
+			return !hasError ? Action.listVersions(type, minecraftSnapshots, loaderBetas) : Action.DISPLAY_HELP;
 		case "install":
 			if (split.size() == 0) {
 				System.err.println("Side is required: \"client\" or \"server\"");
@@ -105,16 +118,27 @@ public final class CliInstaller {
 
 			switch (arg) {
 			case "client": {
-				if (split.size() == 0) {
+				if (split.size() < 1) {
 					System.err.println("Minecraft version is required");
+					return Action.DISPLAY_HELP;
+				}
+				if (split.size() < 2) {
+					System.err.println("Loader type is required");
 					return Action.DISPLAY_HELP;
 				}
 
 				String minecraftVersion = split.remove();
+				String rawLoaderType = split.remove();
+				LoaderType loaderType = LoaderType.valueOf(rawLoaderType.toUpperCase());
+
+				if (loaderType == null) {
+					System.err.println("Unknown loader type: " + rawLoaderType);
+					return Action.DISPLAY_HELP;
+				}
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, null, null, false);
+					return Action.installClient(minecraftVersion, loaderType, null, null, false);
 				}
 
 				// Try to parse loader version first
@@ -129,7 +153,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, loaderVersion, null, false);
+					return Action.installClient(minecraftVersion, loaderType, loaderVersion, null, false);
 				}
 
 				// There are some additional options
@@ -181,19 +205,30 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installClient(minecraftVersion, loaderVersion, options.get("--install-dir"), !options.containsKey("--no-profile"));
+				return Action.installClient(minecraftVersion, loaderType, loaderVersion, options.get("--install-dir"), !options.containsKey("--no-profile"));
 			}
 			case "server": {
-				if (split.size() == 0) {
+				if (split.size() < 1) {
 					System.err.println("Minecraft version is required");
+					return Action.DISPLAY_HELP;
+				}
+				if (split.size() < 2) {
+					System.err.println("Loader type is required");
 					return Action.DISPLAY_HELP;
 				}
 
 				String minecraftVersion = split.remove();
+				String rawLoaderType = split.remove();
+				LoaderType loaderType = LoaderType.valueOf(rawLoaderType.toUpperCase());
+
+				if (loaderType == null) {
+					System.err.println("Unknown loader type: " + rawLoaderType);
+					return Action.DISPLAY_HELP;
+				}
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, null, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -208,7 +243,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderVersion, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, loaderVersion, null, false, false);
 				}
 
 				// There are some additional options
@@ -265,7 +300,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installServer(minecraftVersion, loaderVersion, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
+				return Action.installServer(minecraftVersion, loaderType, loaderVersion, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
 			}
 			default:
 				System.err.printf("Invalid side \"%s\", expected \"client\" or \"server\"%n", arg);

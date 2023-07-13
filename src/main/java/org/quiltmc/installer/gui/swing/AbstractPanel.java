@@ -23,6 +23,7 @@ import java.awt.Font;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
@@ -36,6 +37,7 @@ import javax.swing.event.HyperlinkEvent;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
 
@@ -44,7 +46,7 @@ abstract class AbstractPanel extends JPanel {
 	@Nullable
 	private VersionManifest manifest;
 	@Nullable
-	private List<String> loaderVersions;
+	private Map<LoaderType, List<String>> loaderVersions;
 	@Nullable
 	private Collection<String> intermediaryVersions;
 
@@ -60,7 +62,7 @@ abstract class AbstractPanel extends JPanel {
 		return rowPanel;
 	}
 
-	void receiveVersions(VersionManifest manifest, List<String> loaderVersions, Collection<String> intermediaryVersions) {
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
 		this.manifest = manifest;
 		this.loaderVersions = loaderVersions;
 		this.intermediaryVersions = intermediaryVersions;
@@ -72,14 +74,21 @@ abstract class AbstractPanel extends JPanel {
 	}
 
 	@Nullable
-	public List<String> loaderVersions() {
+	public Map<LoaderType, List<String>> loaderVersions() {
 		return this.loaderVersions;
+	}
+
+	@Nullable 
+	public List<String> loaderVersions(LoaderType type) {
+		return this.loaderVersions == null ? null : this.loaderVersions.get(type);
 	}
 
 	@Nullable
 	public Collection<String> intermediaryVersions() {
 		return this.intermediaryVersions;
 	}
+
+	abstract LoaderType loaderType();
 
 	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Collection<String> intermediaryVersions, boolean snapshots) {
 		// Setup the combo box for Minecraft version selection
@@ -152,8 +161,8 @@ abstract class AbstractPanel extends JPanel {
 		return JOptionPane.showOptionDialog(null, pane, title, optionType, messageType, null, null, null) == 0;
 	}
 
-	protected static void showInstalledMessage() {
-		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", "https://quiltmc.org/qsl"),
+	protected static void showInstalledMessage(LoaderType type) {
+		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getFancyName()),
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 

@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
@@ -32,6 +33,7 @@ import javax.swing.JTextField;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.OsPaths;
 import org.quiltmc.installer.VersionManifest;
@@ -40,6 +42,7 @@ import org.quiltmc.installer.action.InstallClient;
 
 final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
+	private final JComboBox<String> loaderTypeSelector;
 	private final JComboBox<String> loaderVersionSelector;
 	private final JCheckBox showSnapshotsCheckBox;
 	private final JCheckBox showLoaderBetasCheckBox;
@@ -76,37 +79,56 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 		}
 
-		// Loader version
+		// Loader type
 		{
 			JComponent row2 = this.addRow();
 
-			row2.add(new JLabel(Localization.get("gui.loader.version")));
-			row2.add(this.loaderVersionSelector = new JComboBox<>());
+			row2.add(new JLabel(Localization.get("gui.loader.type")));
+			row2.add(this.loaderTypeSelector = new JComboBox<>());
+			this.loaderTypeSelector.setPreferredSize(new Dimension(200, 26));
+			for (LoaderType type : LoaderType.values()) {
+				this.loaderTypeSelector.addItem(type.getFancyName());
+			}
+			this.loaderTypeSelector.setEnabled(true);
+		}
+
+		// Loader version
+		{
+			JComponent row3 = this.addRow();
+
+			row3.add(new JLabel(Localization.get("gui.loader.version")));
+			row3.add(this.loaderVersionSelector = new JComboBox<>());
 			this.loaderVersionSelector.setPreferredSize(new Dimension(200, 26));
 			this.loaderVersionSelector.addItem(Localization.get("gui.install.loading"));
 			this.loaderVersionSelector.setEnabled(false);
 
-			row2.add(this.showLoaderBetasCheckBox = new JCheckBox(Localization.get("gui.loader.version.betas")));
+			row3.add(this.showLoaderBetasCheckBox = new JCheckBox(Localization.get("gui.loader.version.betas")));
 			this.showLoaderBetasCheckBox.setEnabled(false);
 			this.showLoaderBetasCheckBox.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
 					this.showLoaderBetas = e.getStateChange() == ItemEvent.SELECTED;
-					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(), this.showLoaderBetas);
+					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+				}
+			});
+
+			this.loaderTypeSelector.addItemListener(e -> {
+				if (this.loaderVersions() != null) {
+					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 			});
 		}
 
 		// Install location
 		{
-			JComponent row3 = this.addRow();
+			JComponent row4 = this.addRow();
 
-			row3.add(new JLabel(Localization.get("gui.install-location")));
-			row3.add(this.installLocation = new JTextField());
+			row4.add(new JLabel(Localization.get("gui.install-location")));
+			row4.add(this.installLocation = new JTextField());
 			this.installLocation.setPreferredSize(new Dimension(300, 26));
 			// For client use the default installation location
 			this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 
-			row3.add(this.selectInstallationLocation = new JButton());
+			row4.add(this.selectInstallationLocation = new JButton());
 			this.selectInstallationLocation.setText("...");
 			this.selectInstallationLocation.addActionListener(e -> {
 				@Nullable
@@ -120,10 +142,10 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 		// Profile options (Client only)
 		{
-			JComponent row4 = this.addRow();
+			JComponent row5 = this.addRow();
 
 			JCheckBox generateProfile;
-			row4.add(generateProfile = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
+			row5.add(generateProfile = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
 			generateProfile.addItemListener(e -> {
 				this.generateProfile = e.getStateChange() == ItemEvent.SELECTED;
 			});
@@ -132,9 +154,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 		// Install button
 		{
-			JComponent row5 = this.addRow();
+			JComponent row6 = this.addRow();
 
-			row5.add(this.installButton = new JButton());
+			row6.add(this.installButton = new JButton());
 			this.installButton.setEnabled(false);
 			this.installButton.setText(Localization.get("gui.install.loading"));
 			this.installButton.addActionListener(this::install);
@@ -142,8 +164,12 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	}
 
 	private void install(ActionEvent event) {
+		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
+		LoaderType loaderType = LoaderType.valueOf(selectedType);
+
 		Action<InstallClient.MessageType> action = Action.installClient(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
+				loaderType,
 				(String) this.loaderVersionSelector.getSelectedItem(),
 				this.installLocation.getText(),
 				this.generateProfile
@@ -151,16 +177,21 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 		action.run(this);
 
-		showInstalledMessage();
+		showInstalledMessage(loaderType);
 	}
 
 	@Override
-	void receiveVersions(VersionManifest manifest, List<String> loaderVersions, Collection<String> intermediaryVersions) {
+	LoaderType loaderType() {
+		return LoaderType.valueOf(((String) this.loaderTypeSelector.getSelectedItem()).toUpperCase());
+	}
+
+	@Override
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
 		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
 		this.showSnapshotsCheckBox.setEnabled(true);
-		populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, loaderVersions, this.showLoaderBetas);
+		populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);
 
 		this.installButton.setText(Localization.get("gui.install"));

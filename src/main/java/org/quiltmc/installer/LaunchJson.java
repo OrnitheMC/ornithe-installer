@@ -32,11 +32,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public final class LaunchJson {
-	// TODO: Switch to quilt
-	public static final String LOADER_ARTIFACT_NAME = "quilt-loader";
-
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, String loaderVersion) {
-		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), gameVersion.id(side), loaderVersion);
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion) {
+		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), type.getName(), gameVersion.id(side), loaderVersion);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -70,6 +67,10 @@ public final class LaunchJson {
 			}
 			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
 			for (Map<String, String> library : libraries) {
+				if (library.get("name").startsWith("net.fabricmc:intermediary")) {
+					library.replace("name", library.get("name").replace("net.fabricmc:intermediary", "net.ornithemc:calamus-intermediary"));
+					library.replace("url", "https://maven.ornithemc.net/releases/");
+				}
 				if (library.get("name").startsWith("org.quiltmc:hashed")) {
 					library.replace("name", library.get("name").replace("org.quiltmc:hashed", "net.ornithemc:calamus-intermediary"));
 					library.replace("url", "https://maven.ornithemc.net/releases/");

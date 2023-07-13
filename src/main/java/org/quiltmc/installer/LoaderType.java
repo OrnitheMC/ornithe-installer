@@ -16,23 +16,24 @@
 
 package org.quiltmc.installer;
 
-public enum GameSide {
-	CLIENT("client", "/v3/versions/%s-loader/%s/%s/profile/json"),
-	SERVER("server", "/v3/versions/%s-loader/%s/%s/server/json");
+public enum LoaderType {
 
-	private final String id;
-	private final String launchJsonEndpoint;
+	FABRIC("fabric"),
+	QUILT("quilt");
 
-	private GameSide(String id, String launchJsonEndpoint) {
-		this.id = id;
-		this.launchJsonEndpoint = launchJsonEndpoint;
+	private final String name;
+	private final String fancyName;
+
+	private LoaderType(String name) {
+		this.name = name;
+		this.fancyName = this.name.substring(0, 1).toUpperCase() + this.name.substring(1);
 	}
 
-	public String id() {
-		return this.id;
+	public String getName() {
+		return name;
 	}
 
-	public String launchJsonEndpoint() {
-		return this.launchJsonEndpoint;
+	public String getFancyName() {
+		return fancyName;
 	}
 }

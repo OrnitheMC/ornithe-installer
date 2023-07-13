@@ -52,6 +52,7 @@ import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.LaunchJson;
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.VersionManifest;
 import org.quiltmc.json5.JsonReader;
 
@@ -62,6 +63,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 	public static final String SERVICES_DIR = "META-INF/services/";
 
 	private final String minecraftVersion;
+	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
 	private final String installDir;
@@ -70,8 +72,9 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 	private MinecraftInstallation.InstallationInfo installationInfo;
 	private Path installedDir;
 
-	InstallServer(String minecraftVersion, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
+	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
 		this.minecraftVersion = minecraftVersion;
+		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.installDir = installDir;
 		this.createScripts = createScripts;
@@ -99,11 +102,11 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 			println(String.format("Installing server launcher for %s with loader %s", this.minecraftVersion, this.loaderVersion));
 		}
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderVersion);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.loaderVersion());
+			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion());
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 
@@ -152,7 +155,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 							Files.createDirectories(installDir);
 						}
 
-						createLaunchJar(installDir.resolve("quilt-server-launch.jar"), mainClass, libraryFiles);
+						createLaunchJar(installDir.resolve(String.format("%s-server-launch.jar", this.loaderType.getName())), mainClass, libraryFiles);
 					} catch (IOException e) {
 						throw new UncheckedIOException(e);
 					} catch (InterruptedException | ExecutionException e) {
@@ -274,7 +277,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 		});
 	}
 
-	// Combine all the jars into one file for the quilt-server-launch.jar
+	// Combine all the jars into one file for the server-launch.jar
 	private static void createLaunchJar(Path path, String mainClass, Set<CompletableFuture<Path>> libraries) throws IOException, ExecutionException, InterruptedException {
 		if (Files.exists(path)) {
 			Files.delete(path);

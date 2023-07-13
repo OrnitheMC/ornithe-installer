@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
@@ -37,7 +38,7 @@ public final class MinecraftInstallation {
 	 * @param loaderVersion the override for the loader version to use
 	 * @return a future containing the loader version to use
 	 */
-	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, @Nullable String loaderVersion) {
+	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion) {
 		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create().thenApply(manifest -> {
 			if (manifest.getVersion(gameVersion) != null) {
 				return manifest;
@@ -47,7 +48,7 @@ public final class MinecraftInstallation {
 		});
 
 		Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
-		endpoints.add(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+		endpoints.add(OrnitheMeta.loaderVersionsEndpoint(loaderType));
 		endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
 		CompletableFuture<OrnitheMeta> metaFuture = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints);
@@ -66,7 +67,7 @@ public final class MinecraftInstallation {
 		});
 
 		CompletableFuture<String> loaderVersionFuture = metaFuture.thenApply(meta -> {
-			List<String> versions = meta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+			List<String> versions = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(loaderType));
 
 			if (loaderVersion != null) {
 				if (!versions.contains(loaderVersion)) {

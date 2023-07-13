@@ -35,20 +35,23 @@ import org.quiltmc.installer.OsPaths;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LauncherProfiles;
+import org.quiltmc.installer.LoaderType;
 
 /**
  * An action which installs a new client instance.
  */
 public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final String minecraftVersion;
+	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
 	private final String installDir;
 	private final boolean generateProfile;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
+	InstallClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
 		this.minecraftVersion = minecraftVersion;
+		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.installDir = installDir;
 		this.generateProfile = generateProfile;
@@ -85,14 +88,14 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		 * 7. (Optional) create profile if needed
 		 */
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderVersion);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
-		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.loaderVersion())).thenAccept(launchJson -> {
+		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion())).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
 			try {
-				String profileName = String.format("%s-%s-%s",
-						LaunchJson.LOADER_ARTIFACT_NAME,
+				String profileName = String.format("%s-loader-%s-%s",
+						this.loaderType.getName(),
 						installationInfoFuture.get().loaderVersion(),
 						this.minecraftVersion
 				);

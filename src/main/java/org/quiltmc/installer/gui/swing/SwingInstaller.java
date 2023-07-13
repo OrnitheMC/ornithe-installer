@@ -16,20 +16,22 @@
 
 package org.quiltmc.installer.gui.swing;
 
+import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -106,15 +108,23 @@ public final class SwingInstaller extends JFrame {
 			// Start version lookup before we show the window
 			// Lookup loader and intermediary
 			Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
-			endpoints.add(OrnitheMeta.LOADER_VERSIONS_ENDPOINT);
+			for (LoaderType type : LoaderType.values()) {
+				endpoints.add(OrnitheMeta.loaderVersionsEndpoint(type));
+			}
 			endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
 			OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(), ((quiltMeta, manifest) -> {
-				List<String> loaderVersions = quiltMeta.getEndpoint(OrnitheMeta.LOADER_VERSIONS_ENDPOINT).stream().filter(v -> {
-					// TODO HACK HACK HACK
-					// This is a hack to filter out old versions of Loader which we know will not support finding the main class.
-					return !(v.startsWith("0.16.0-beta.") && v.length() == 13 && v.charAt(12) != '9');
-				}).collect(Collectors.toList());
+				Map<LoaderType, List<String>> loaderVersions = new EnumMap<>(LoaderType.class);
+				for (LoaderType type : LoaderType.values()) {
+					loaderVersions.put(type, quiltMeta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(type)).stream().filter(v -> {
+						if (type != LoaderType.QUILT) {
+							return true;
+						}
+						// TODO HACK HACK HACK
+						// This is a hack to filter out old versions of Loader which we know will not support finding the main class.
+						return !(v.startsWith("0.16.0-beta.") && v.length() == 13 && v.charAt(12) != '9');
+					}).collect(Collectors.toList()));
+				}
 				Collection<String> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).keySet();
 
 				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
