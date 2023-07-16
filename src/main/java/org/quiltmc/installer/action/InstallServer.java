@@ -55,7 +55,7 @@ import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.VersionManifest;
-import org.quiltmc.json5.JsonReader;
+import org.quiltmc.parsers.json.JsonReader;
 
 /**
  * An action which creates the server launch jar and downloads the dedicated server.
@@ -107,7 +107,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion());
+			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion(), false);
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 

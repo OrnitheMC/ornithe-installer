@@ -150,6 +150,11 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				this.generateProfile = e.getStateChange() == ItemEvent.SELECTED;
 			});
 			this.generateProfile = true;
+
+			List<JComponent> beaconOptOutComponents = this.createBeaconOptOut();
+			if (beaconOptOutComponents != null) {
+				beaconOptOutComponents.forEach(row4::add);
+			}
 		}
 
 		// Install button
@@ -172,7 +177,8 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				loaderType,
 				(String) this.loaderVersionSelector.getSelectedItem(),
 				this.installLocation.getText(),
-				this.generateProfile
+				this.generateProfile,
+				this.beaconOptOut
 		);
 
 		action.run(this);

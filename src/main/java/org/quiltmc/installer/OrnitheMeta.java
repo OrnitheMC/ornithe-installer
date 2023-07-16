@@ -32,8 +32,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import org.quiltmc.json5.JsonReader;
-import org.quiltmc.json5.JsonToken;
+import org.quiltmc.parsers.json.JsonReader;
+import org.quiltmc.parsers.json.JsonToken;
 
 public final class OrnitheMeta {
 	public static final Endpoint<List<String>> FABRIC_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/fabric-loader");
@@ -76,25 +76,21 @@ public final class OrnitheMeta {
 			String maven = null;
 
 			while (reader.hasNext()) {
-				switch (reader.nextName()) {
-					case "version":
-						if (reader.peek() != JsonToken.STRING) {
-							throw new ParseException("Version must be a string", reader);
-						}
-
-						version = reader.nextString();
-						break;
-					case "maven":
-						if (reader.peek() != JsonToken.STRING) {
-							throw new ParseException("maven must be a string", reader);
-						}
-
-						maven = reader.nextString();
-						break;
-					case "stable":
-						reader.nextBoolean(); // TODO
-						break;
-				}
+                switch (reader.nextName()) {
+                    case "version" -> {
+                        if (reader.peek() != JsonToken.STRING) {
+                            throw new ParseException("Version must be a string", reader);
+                        }
+                        version = reader.nextString();
+                    }
+                    case "maven" -> {
+                        if (reader.peek() != JsonToken.STRING) {
+                            throw new ParseException("maven must be a string", reader);
+                        }
+                        maven = reader.nextString();
+                    }
+                    case "stable" -> reader.nextBoolean(); // TODO
+                }
 			}
 
 			if (version == null) {

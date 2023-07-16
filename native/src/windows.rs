@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use winreg::RegKey;
 
 pub const PLATFORM_JAVA_EXECUTABLE_NAME: &str = "javaw";
-pub const INSTALLER_JRE_HELP_URL: &str = "https://quiltmc.org"; // TODO: Fill in URL
 pub const UWP_PATH: &str = "Packages/Microsoft.4297127D64EC6_8wekyb3d8bbwe/LocalCache/Local/";
 
 fn get_uwp_installer() -> io::Result<PathBuf> {
@@ -44,21 +43,18 @@ fn launcher_install_dir() -> io::Result<PathBuf> {
 /// if the system's bundled JRE is not suitable.
 pub(crate) fn get_jre_locations() -> io::Result<Vec<PathBuf>> {
 	let paths = vec![
-		"runtime/jre-legacy/windows-x64/jre-legacy/bin/javaw.exe",
-		"runtime/jre-legacy/windows-x86/jre-legacy/bin/javaw.exe",
-		"runtime/jre-x64/bin/javaw.exe",
-		"runtime/jre-x86/bin/javaw.exe",
-		"runtime/jre-legacy/windows-x64/javaw.exe",
-		"runtime/jre-legacy/windows-x86/javaw.exe",
-		"runtime/java-runtime-alpha/windows-x64/javaw.exe",
-		"runtime/java-runtime-alpha/windows-x86/javaw.exe",
-		"runtime/java-runtime-beta/windows-x86/javaw.exe",
-		"runtime/java-runtime-beta/windows-x64/javaw.exe",
-		"runtime/java-runtime-gamma/windows-x86/javaw.exe",
-		"runtime/java-runtime-gamma/windows-x64/javaw.exe",
-		// All signs point to a versioning scheme based on Greek letters. Let's future-proof it against the next predicted one 
-		"runtime/java-runtime-delta/windows-x64/javaw.exe",
-		"runtime/java-runtime-delta/windows-x86/javaw.exe"
+		"runtime/java-runtime-gamma/windows-x64/java-runtime-gamma/bin/javaw.exe",
+		"runtime/java-runtime-beta/windows-x64/java-runtime-beta/bin/javaw.exe",
+
+		// x86 versions
+		"runtime/java-runtime-gamma/windows-x86/java-runtime-gamma/bin/javaw.exe",
+		"runtime/java-runtime-beta/windows-x86/java-runtime-beta/bin/javaw.exe", // used by at least 1.18.2
+
+
+
+		// All signs point to a versioning scheme based on Greek letters. Let's future-proof it against the next predicted one
+		"runtime/java-runtime-delta/windows-x64/java-runtime-delta/javaw.exe",
+		"runtime/java-runtime-delta/windows-x86/java-runtime-delta/javaw.exe"
 	];
 
 	let mut candidates = Vec::new();
