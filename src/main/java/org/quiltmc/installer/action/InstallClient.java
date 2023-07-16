@@ -94,7 +94,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 			println("Creating profile launch json");
 
 			try {
-				String profileName = String.format("%s-loader-%s-%s",
+				String profileName = String.format("%s-loader-%s-%s-ornithe",
 						this.loaderType.getName(),
 						installationInfoFuture.get().loaderVersion(),
 						this.minecraftVersion
