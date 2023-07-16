@@ -165,7 +165,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 	private void install(ActionEvent event) {
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
-		LoaderType loaderType = LoaderType.valueOf(selectedType);
+		LoaderType loaderType = LoaderType.of(selectedType);
 
 		Action<InstallClient.MessageType> action = Action.installClient(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
@@ -182,7 +182,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 	@Override
 	LoaderType loaderType() {
-		return LoaderType.valueOf(((String) this.loaderTypeSelector.getSelectedItem()).toUpperCase());
+		return LoaderType.of(((String) this.loaderTypeSelector.getSelectedItem()));
 	}
 
 	@Override

@@ -76,7 +76,7 @@ public final class CliInstaller {
 			}
 
 			String rawType = split.remove();
-			LoaderType type = LoaderType.valueOf(rawType.toUpperCase());
+			LoaderType type = LoaderType.of(rawType);
 
 			if (type == null) {
 				System.err.println("Unknown loader type: " + rawType);
@@ -129,7 +129,7 @@ public final class CliInstaller {
 
 				String minecraftVersion = split.remove();
 				String rawLoaderType = split.remove();
-				LoaderType loaderType = LoaderType.valueOf(rawLoaderType.toUpperCase());
+				LoaderType loaderType = LoaderType.of(rawLoaderType);
 
 				if (loaderType == null) {
 					System.err.println("Unknown loader type: " + rawLoaderType);
@@ -219,7 +219,7 @@ public final class CliInstaller {
 
 				String minecraftVersion = split.remove();
 				String rawLoaderType = split.remove();
-				LoaderType loaderType = LoaderType.valueOf(rawLoaderType.toUpperCase());
+				LoaderType loaderType = LoaderType.of(rawLoaderType);
 
 				if (loaderType == null) {
 					System.err.println("Unknown loader type: " + rawLoaderType);

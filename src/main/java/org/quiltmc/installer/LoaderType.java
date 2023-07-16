@@ -36,4 +36,8 @@ public enum LoaderType {
 	public String getFancyName() {
 		return fancyName;
 	}
+
+	public static LoaderType of(String name) {
+		return valueOf(name.toUpperCase());
+	}
 }

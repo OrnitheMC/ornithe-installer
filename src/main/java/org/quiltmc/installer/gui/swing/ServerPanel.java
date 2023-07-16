@@ -174,7 +174,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 
 	@Override
 	LoaderType loaderType() {
-		return LoaderType.valueOf(((String) this.loaderTypeSelector.getSelectedItem()).toUpperCase());
+		return LoaderType.of(((String) this.loaderTypeSelector.getSelectedItem()));
 	}
 
 	@Override
@@ -215,7 +215,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 		}
 
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
-		LoaderType loaderType = LoaderType.valueOf(selectedType);
+		LoaderType loaderType = LoaderType.of(selectedType);
 
 		InstallServer action = Action.installServer(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
