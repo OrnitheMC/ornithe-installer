@@ -24,7 +24,7 @@ public class Connections {
     public static final String INSTALLER_VERSION = getInstallerVersion();
 
     private static String getInstallerVersion() {
-        String version = QuiltMeta.class.getPackage().getImplementationVersion();
+        String version = OrnitheMeta.class.getPackage().getImplementationVersion();
         if (version != null) {
             return version;
         }

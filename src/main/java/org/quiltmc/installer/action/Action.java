@@ -90,7 +90,7 @@ public abstract class Action<M> {
 	}
 
 	public static InstallClient installClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable String installDir, boolean generateProfile, boolean beaconOptOut) {
-		return new InstallClient(minecraftVersion, loaderVersion, installDir, generateProfile, beaconOptOut);
+		return new InstallClient(minecraftVersion, loaderType, loaderVersion, installDir, generateProfile, beaconOptOut);
 	}
 
 	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
