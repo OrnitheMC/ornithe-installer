@@ -125,7 +125,7 @@ public final class OrnitheMeta {
 				try {
 					URL url = new URL(baseMetaUrl + endpoint.endpointPath);
 
-					URLConnection connection = url.openConnection();
+					URLConnection connection = Connections.openConnection(url);
 
 					InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
 

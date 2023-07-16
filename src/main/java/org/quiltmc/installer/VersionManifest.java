@@ -47,7 +47,7 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				URL url = new URL(LAUNCHER_META_URL);
-				URLConnection connection = url.openConnection();
+				URLConnection connection = Connections.openConnection(url);
 
 				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
 
