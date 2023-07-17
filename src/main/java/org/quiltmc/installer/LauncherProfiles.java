@@ -34,7 +34,7 @@ import org.quiltmc.parsers.json.JsonWriter;
 
 public final class LauncherProfiles {
 	private static final DateFormat ISO_8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-	private static final String LOADER_NAME = "Quilt";
+	//private static final String LOADER_NAME = "Quilt";
 
 	/**
 	 * Reads the launcher_profiles, creates or modifies the existing launcher profile and then writes the new launcher profiles.
@@ -44,7 +44,7 @@ public final class LauncherProfiles {
 	 * @param gameVersion the game version
 	 * @throws IOException if there were any issues reading or writing
 	 */
-	public static void updateProfiles(Path gameDir, String name, String gameVersion) throws IOException {
+	public static void updateProfiles(Path gameDir, String name, String gameVersion, LoaderType loaderType) throws IOException {
 		final Path launcherProfilesPath = gameDir.resolve("launcher_profiles.json");
 
 		if (Files.notExists(launcherProfilesPath)) {
@@ -69,7 +69,7 @@ public final class LauncherProfiles {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> profiles = (Map<String, Object>) rawProfiles;
-		String newProfileName = LOADER_NAME + " " + gameVersion;
+		String newProfileName = loaderType.getFancyName() + " " + gameVersion;
 
 		// Modify the profile
 		if (profiles.containsKey(newProfileName)) {
