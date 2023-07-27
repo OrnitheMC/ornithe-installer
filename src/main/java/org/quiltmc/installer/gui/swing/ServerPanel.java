@@ -67,8 +67,8 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 			row1.add(new JLabel(Localization.get("gui.game.version")));
 			row1.add(this.minecraftVersionSelector = new JComboBox<>());
 			// Set the preferred size so we do not need to repack the window
-			// The chosen width is so we are wider than 3D Shareware v1.3.4
-			this.minecraftVersionSelector.setPreferredSize(new Dimension(170, 26));
+			// The chosen width is so we are wider than b1.9-pre4-201110131434
+			this.minecraftVersionSelector.setPreferredSize(new Dimension(220, 26));
 			this.minecraftVersionSelector.addItem(Localization.get("gui.install.loading"));
 			this.minecraftVersionSelector.setEnabled(false);
 			this.minecraftVersionSelector.addActionListener(e -> updateFlags());
