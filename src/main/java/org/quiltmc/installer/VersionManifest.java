@@ -23,9 +23,11 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,7 +40,8 @@ import org.quiltmc.parsers.json.JsonToken;
  */
 // TODO: Abstract to another library for sharing logic with meta?
 public final class VersionManifest implements Iterable<VersionManifest.Version> {
-	private static final String LAUNCHER_META_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
+	public static final String LAUNCHER_META_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
+	public static final String VERSION_META_URL = "https://skyrising.github.io/mc-versions/version/manifest/%s.json";
 	private final Version latestRelease;
 	private final Version latestSnapshot;
 	private final Map<String, Version> versions;
@@ -236,7 +239,7 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			throw new ParseException("Version Details was invalid type", reader);
 		}
 
-		@Nullable
+		List<String> manifests = null;
 		Boolean sharedMappings = null;
 
 		reader.beginObject();
@@ -245,6 +248,13 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			String key = reader.nextName();
 
 			switch (key) {
+			case "manifests":
+				if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+					throw new ParseException("manifests must be an array", reader);
+				}
+
+				manifests = readManifests(version, reader);
+				break;
 			case "sharedMappings":
 				if (reader.peek() != JsonToken.BOOLEAN) {
 					throw new ParseException("sharedMappings must be a boolean", reader);
@@ -259,9 +269,50 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		reader.endObject();
 
+		if (manifests == null) throw new ParseException("manifests is required", reader);
 		if (sharedMappings == null) throw new ParseException("sharedMappings is required", reader);
 
-		return new VersionDetails(version, sharedMappings);
+		return new VersionDetails(version, manifests, sharedMappings);
+	}
+
+	private static List<String> readManifests(Version version, JsonReader reader) throws IOException, ParseException {
+		if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+			throw new ParseException("Versions manifests must be in an array", reader);
+		}
+
+		List<String> manifests = new ArrayList<>();
+
+		reader.beginArray();
+
+		while (reader.hasNext()) {
+			if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+				throw new ParseException("Version manifest entries must all be objects", reader);
+			}
+
+			reader.beginObject();
+
+			while (reader.hasNext()) {
+				String key = reader.nextName();
+
+				switch (key) {
+				case "url":
+					if (reader.peek() != JsonToken.STRING) {
+						throw new ParseException("Version url must be a string", reader);
+					}
+
+					manifests.add(reader.nextString());
+					break;
+				default:
+					reader.skipValue();
+				}
+			}
+
+			reader.endObject();
+		}
+
+		reader.endArray();
+
+		return Collections.unmodifiableList(manifests);
 	}
 
 	private VersionManifest(Version latestRelease, Version latestSnapshot, Map<String, Version> versions) {
@@ -360,15 +411,21 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 	public static final class VersionDetails {
 		private final Version version;
+		private final List<String> manifests;
 		private final boolean sharedMappings;
 
-		VersionDetails(Version version, boolean sharedMappings) {
+		VersionDetails(Version version, List<String> manifests, boolean sharedMappings) {
 			this.version = version;
+			this.manifests = manifests;
 			this.sharedMappings = sharedMappings;
 		}
 
 		public Version version() {
 			return this.version;
+		}
+
+		public List<String> manifests() {
+			return this.manifests;
 		}
 
 		public boolean sharedMappings() {

@@ -92,10 +92,14 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 
 		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
-		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion(), this.beaconOptOut)).thenAccept(launchJson -> {
+		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(installationInfo.manifest().getVersion(this.minecraftVersion)).thenCompose(vanillaLaunchJson -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion(), this.beaconOptOut).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
 			try {
+				// add the -vanilla suffix to the vanilla json 'cause
+				// we use a different version manifest than mojang and
+				// some version ids can differ from the official ones
+				String vanillaProfileName = String.format("%s-vanilla", this.minecraftVersion);
 				String profileName = String.format("%s-loader-%s-%s-ornithe",
 						this.loaderType.getName(),
 						installationInfoFuture.get().loaderVersion(),
@@ -104,19 +108,14 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 
 				// Directories
 				Path versionsDir = this.installDirPath.resolve("versions");
+				Path vanillaProfileDir = versionsDir.resolve(vanillaProfileName);
+				Path vanillaProfileJson = vanillaProfileDir.resolve(vanillaProfileName + ".json");
 				Path profileDir = versionsDir.resolve(profileName);
 				Path profileJson = profileDir.resolve(profileName + ".json");
+
 				// Nuke everything that already exists
-				try {
-					Files.walk(profileDir).map(Path::toFile).sorted((o1, o2) -> -o1.compareTo(o2)).forEach(File::delete);
-				 } catch (IOException ignored) {
-					//
-				}
-				try {
-					Files.createDirectories(profileDir);
-				} catch (IOException e) {
-					throw new UncheckedIOException(e); // Handle via exceptionally
-				}
+				clearProfileDir(vanillaProfileDir);
+				clearProfileDir(profileDir);
 
 				/*
 				 * Abuse some of the vanilla launcher's undefined behavior:
@@ -127,20 +126,12 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 				 */
 
 				// Make our pretender jar
-				try {
-					Files.createFile(profileDir.resolve(profileName + ".jar"));
-				} catch (FileAlreadyExistsException ignore) {
-					// Pretender jar already exists
-				} catch (IOException e) {
-					throw new UncheckedIOException(e); // Handle via exceptionally
-				}
+				makePretenderJar(vanillaProfileDir, vanillaProfileName);
+				makePretenderJar(profileDir, profileName);
 
 				// Write the launch json
-				try (Writer writer = new OutputStreamWriter(Files.newOutputStream(profileJson, StandardOpenOption.CREATE_NEW))) {
-					writer.append(launchJson);
-				} catch (IOException e) {
-					throw new UncheckedIOException(e); // Handle via exceptionally
-				}
+				writeLaunchJson(vanillaProfileJson, vanillaLaunchJson);
+				writeLaunchJson(profileJson, launchJson);
 
 				// Create the profile - this is typically set by default
 				if (this.generateProfile) {
@@ -158,12 +149,43 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 				// Anyways if it does happen let exceptionally deal with it
 				throw new RuntimeException(e);
 			}
-		}).exceptionally(e -> {
+		}))).exceptionally(e -> {
 			eprintln("Failed to install client");
 			e.printStackTrace();
 			System.exit(1);
 			return null;
 		}).join();
+	}
+
+	private static void clearProfileDir(Path dir) {
+		try {
+			Files.walk(dir).map(Path::toFile).sorted((o1, o2) -> -o1.compareTo(o2)).forEach(File::delete);
+		 } catch (IOException ignored) {
+			//
+		}
+		try {
+			Files.createDirectories(dir);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e); // Handle via exceptionally
+		}
+	}
+
+	private static void makePretenderJar(Path dir, String profileName) {
+		try {
+			Files.createFile(dir.resolve(profileName + ".jar"));
+		} catch (FileAlreadyExistsException ignore) {
+			// Pretender jar already exists
+		} catch (IOException e) {
+			throw new UncheckedIOException(e); // Handle via exceptionally
+		}
+	}
+
+	private static void writeLaunchJson(Path path, String json) {
+		try (Writer writer = new OutputStreamWriter(Files.newOutputStream(path, StandardOpenOption.CREATE_NEW))) {
+			writer.append(json);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e); // Handle via exceptionally
+		}
 	}
 
 	public enum MessageType {
