@@ -129,7 +129,7 @@ abstract class AbstractPanel extends JPanel {
 		comboBox.setEnabled(true);
 	}
 
-	protected @Nullable List<JComponent> createBeaconOptOut() {
+	/*protected @Nullable List<JComponent> createBeaconOptOut() {
 		if (Boolean.parseBoolean(System.getenv().get("QUILT_LOADER_DISABLE_BEACON")) ||
 			Boolean.parseBoolean(System.getenv().get("CI")) ||
 			Boolean.getBoolean("loader.disable_beacon")) {
@@ -164,7 +164,7 @@ abstract class AbstractPanel extends JPanel {
 		components.add(optOutBox);
 		components.add(linkLabel);
 		return components;
-	}
+	}*/
 
 	@Nullable
 	static String displayFileChooser(String initialDir) {

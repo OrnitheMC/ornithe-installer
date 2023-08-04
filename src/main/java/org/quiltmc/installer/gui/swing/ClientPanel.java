@@ -151,10 +151,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 
-			List<JComponent> beaconOptOutComponents = this.createBeaconOptOut();
-			if (beaconOptOutComponents != null) {
-				beaconOptOutComponents.forEach(row5::add);
-			}
+			JComponent rowForTelemetryInfo = this.addRow();
+			JLabel noOptOutText = new JLabel("Quilt telemetry is disabled by default"); // add localisations
+			rowForTelemetryInfo.add(noOptOutText);
 		}
 
 		// Install button
