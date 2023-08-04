@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -54,6 +55,7 @@ import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LoaderType;
+import org.quiltmc.installer.Value;
 import org.quiltmc.installer.VersionManifest;
 import org.quiltmc.parsers.json.JsonReader;
 
@@ -121,10 +123,26 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 
 				@SuppressWarnings("unchecked")
 				Map<String, Object> root = ((Map<String, Object>) read);
-				String mainClass = (String) root.get("launcherMainClass");
 
-				if (mainClass == null) {
-					throw new IllegalStateException("launcherMainClass in server launch json was not present");
+				// a bit of jank to get around variables needing
+				// to be final when referenced inside lambdas
+				Value<String> mainClass = new Value<>();
+				Value<String> launchMainClass = new Value<>();
+
+				if (loaderType == LoaderType.FABRIC) {
+					mainClass.set((String) root.get("mainClass"));
+					launchMainClass.set("net.fabricmc.loader.launch.server.FabricServerLauncher");
+
+					if (mainClass.get() == null) {
+						throw new IllegalStateException("mainClass in server launch json was not present");
+					}
+				}
+				if (loaderType == LoaderType.QUILT) {
+					launchMainClass.set((String) root.get("launcherMainClass"));
+
+					if (launchMainClass.get() == null) {
+						throw new IllegalStateException("launcherMainClass in server launch json was not present");
+					}
 				}
 
 				@SuppressWarnings("unchecked")
@@ -146,8 +164,21 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 
 					String name = libraryFields.computeIfAbsent("name", k -> { throw new IllegalStateException("Library had no name!"); });
 					String url = libraryFields.computeIfAbsent("url", k -> { throw new IllegalStateException("Library had no url!"); });
+					CompletableFuture<Path> libraryFile = downloadLibrary(installDir.resolve("libraries"), name, url);
 
-					libraryFiles.add(downloadLibrary(installDir.resolve("libraries"), name, url));
+					libraryFiles.add(libraryFile);
+
+					if (name.matches("net\\.fabricmc:fabric-loader:.*")) {
+						libraryFile.thenAccept(path -> {
+							try (JarFile jarFile = new JarFile(path.toFile())) {
+								Manifest manifest = jarFile.getManifest();
+								String loaderMainClass = manifest.getMainAttributes().getValue("Main-Class");
+
+								launchMainClass.set(loaderMainClass);
+							} catch (IOException ignored) {
+							}
+						});
+					}
 				}
 
 				return CompletableFuture.allOf(libraryFiles.toArray(new CompletableFuture[0])).thenAccept(_v -> {
@@ -156,7 +187,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 							Files.createDirectories(installDir);
 						}
 
-						createLaunchJar(installDir.resolve(String.format("%s-server-launch.jar", this.loaderType.getName())), mainClass, libraryFiles);
+						createLaunchJar(installDir.resolve(String.format("%s-server-launch.jar", this.loaderType.getName())), loaderType, mainClass, launchMainClass, libraryFiles);
 					} catch (IOException e) {
 						throw new UncheckedIOException(e);
 					} catch (InterruptedException | ExecutionException e) {
@@ -279,7 +310,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 	}
 
 	// Combine all the jars into one file for the server-launch.jar
-	private static void createLaunchJar(Path path, String mainClass, Set<CompletableFuture<Path>> libraries) throws IOException, ExecutionException, InterruptedException {
+	private static void createLaunchJar(Path path, LoaderType loaderType, Value<String> mainClass, Value<String> launchMainClass, Set<CompletableFuture<Path>> libraries) throws IOException, ExecutionException, InterruptedException {
 		if (Files.exists(path)) {
 			Files.delete(path);
 		}
@@ -288,10 +319,16 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 			zipStream.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
 			Manifest manifest = new Manifest();
 			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-			manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
+			manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, launchMainClass.get());
 			manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, libraries.stream().map(CompletableFuture::join).map(p -> path.getParent().relativize(p).toString().replace("\\", "/")).collect(Collectors.joining(" ")));
 			manifest.write(zipStream);
 			zipStream.closeEntry();
+
+			if (loaderType == LoaderType.FABRIC) {
+				zipStream.putNextEntry(new ZipEntry("fabric-server-launch.properties"));
+				zipStream.write(("launch.mainClass=" + mainClass.get() + "\n").getBytes(StandardCharsets.UTF_8));
+				zipStream.closeEntry();
+			}
 		}
 	}
 

@@ -33,6 +33,67 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public final class LaunchJson {
+	/**
+	 * @return the launch json for a vanilla mc instance
+	 */
+	public static CompletableFuture<String> get(VersionManifest.Version gameVersion) {
+		String rawUrl = String.format(VersionManifest.VERSION_META_URL, gameVersion.id());
+
+		return CompletableFuture.supplyAsync(() -> {
+			try {
+				URL url = new URL(rawUrl);
+				URLConnection connection = Connections.openConnection(url);
+				Map<String, Object> map;
+
+				try (InputStreamReader input = new InputStreamReader(connection.getInputStream())) {
+					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
+				}
+
+				for (String rawManifestUrl : gameVersion.details().manifests()) {
+					URL manifestUrl = new URL(rawManifestUrl);
+					URLConnection manifestConnection = Connections.openConnection(manifestUrl);
+
+					try (InputStreamReader input = new InputStreamReader(manifestConnection.getInputStream())) {
+						buildVersionJsonFromManifest(map, (Map<String, Object>) Gsons.read(JsonReader.json(input)));
+					}
+				}
+
+				map.put("id", String.format("%s-vanilla", gameVersion.id()));
+
+				StringWriter writer = new StringWriter();
+				Gsons.write(JsonWriter.json(writer), map);
+
+				return writer.toString();
+			} catch (IOException e) {
+				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
+			}
+		});
+	}
+
+	private static void buildVersionJsonFromManifest(Map<String, Object> versionJson, Map<String, Object> manifest) {
+		for (String key : manifest.keySet()) {
+			if (versionJson.containsKey(key)) {
+				Object versionJsonElement = versionJson.get(key);
+				Object manifestElement = manifest.get(key);
+
+				if (versionJsonElement.equals(manifestElement)) {
+					// version json already contains this element, continue
+				} else {
+					// check if elements are objects and combine them
+					if (versionJsonElement instanceof Map && manifestElement instanceof Map) {
+						buildVersionJsonFromManifest((Map<String, Object>) versionJsonElement, (Map<String, Object>) manifestElement);
+					}
+				}
+			} else {
+				// version json does not have this element yet; add it
+				versionJson.put(key, manifest.get(key));
+			}
+		}
+	}
+
+	/**
+	 * @return the launch json for a modded mc instance
+	 */
 	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion) {
 		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), type.getName(), gameVersion.id(side), loaderVersion);
 
