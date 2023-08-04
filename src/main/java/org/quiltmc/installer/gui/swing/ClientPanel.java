@@ -117,7 +117,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 				if (telemetryCheckBox != null) {
-					telemetryCheckBox.setVisible(this.loaderType() != LoaderType.FABRIC);
+					telemetryCheckBox.setVisible(this.loaderType() == LoaderType.QUILT);
 				}
 			});
 		}
