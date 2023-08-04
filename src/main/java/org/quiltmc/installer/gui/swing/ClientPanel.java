@@ -48,7 +48,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
-	private JComponent telemetryInfoText;
+	private JComponent telemetryCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
@@ -116,8 +116,8 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
-				if (telemetryInfoText != null) {
-					telemetryInfoText.setVisible(this.loaderType() != LoaderType.FABRIC);
+				if (telemetryCheckBox != null) {
+					telemetryCheckBox.setVisible(this.loaderType() != LoaderType.FABRIC);
 				}
 			});
 		}
@@ -155,11 +155,11 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 
-			JComponent rowForTelemetryInfo = this.addRow();
-			JLabel noOptOutText = new JLabel("\n" + Localization.get("gui.beacon-opt-out")); // add localisations
-			rowForTelemetryInfo.add(noOptOutText);
-			this.telemetryInfoText = noOptOutText;
-			noOptOutText.setVisible(false);
+			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
+			row5.add(optOutBox);
+			optOutBox.setEnabled(false);
+			optOutBox.setVisible(false);
+			this.telemetryCheckBox = optOutBox;
 		}
 
 		// Install button
@@ -171,8 +171,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.installButton.setText(Localization.get("gui.install.loading"));
 			this.installButton.addActionListener(this::install);
 		}
-
-		this.addRow(); // row needed for resizing to not cover up the install button telemetry info text
 
 	}
 
