@@ -177,8 +177,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				loaderType,
 				(String) this.loaderVersionSelector.getSelectedItem(),
 				this.installLocation.getText(),
-				this.generateProfile,
-				this.beaconOptOut
+				this.generateProfile
 		);
 
 		action.run(this);
