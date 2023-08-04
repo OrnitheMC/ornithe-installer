@@ -49,7 +49,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
 	private final JButton installButton;
-	private List<JComponent> beaconComponents; // don't think this can be final
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
 	private boolean generateProfile;
@@ -115,12 +114,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.loaderTypeSelector.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
-
-					if (beaconComponents != null) {
-						for (JComponent beaconComponent : beaconComponents) {
-							beaconComponent.setVisible(this.loaderType() == LoaderType.QUILT);
-						}
-					}
 				}
 			});
 		}
@@ -162,7 +155,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			if (beaconOptOutComponents != null) {
 				beaconOptOutComponents.forEach(row5::add);
 			}
-			this.beaconComponents = beaconOptOutComponents;
 		}
 
 		// Install button

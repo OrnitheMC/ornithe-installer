@@ -161,9 +161,6 @@ abstract class AbstractPanel extends JPanel {
 		});
 		optOutBox.add(linkLabel);
 
-		linkLabel.setVisible(false);
-		optOutBox.setVisible(false);
-
 		components.add(optOutBox);
 		components.add(linkLabel);
 		return components;
