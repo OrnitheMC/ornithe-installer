@@ -48,6 +48,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
+	private JComponent telemetryInfoText;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
@@ -115,6 +116,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
+				if (telemetryInfoText != null) {
+					telemetryInfoText.setVisible(this.loaderType() != LoaderType.FABRIC);
+				}
 			});
 		}
 
@@ -152,8 +156,10 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.generateProfile = true;
 
 			JComponent rowForTelemetryInfo = this.addRow();
-			JLabel noOptOutText = new JLabel("Quilt telemetry is disabled by default"); // add localisations
+			JLabel noOptOutText = new JLabel("\n" + Localization.get("gui.beacon-opt-out")); // add localisations
 			rowForTelemetryInfo.add(noOptOutText);
+			this.telemetryInfoText = noOptOutText;
+			noOptOutText.setVisible(false);
 		}
 
 		// Install button
@@ -165,7 +171,12 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.installButton.setText(Localization.get("gui.install.loading"));
 			this.installButton.addActionListener(this::install);
 		}
+
+		this.addRow(); // row needed for resizing to not cover up the install button telemetry info text
+
 	}
+
+
 
 	private void install(ActionEvent event) {
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
