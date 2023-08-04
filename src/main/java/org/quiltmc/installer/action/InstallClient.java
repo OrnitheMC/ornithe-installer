@@ -47,16 +47,14 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final String loaderVersion;
 	private final String installDir;
 	private final boolean generateProfile;
-	private final boolean beaconOptOut;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile, boolean beaconOptOut) {
+	InstallClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
 		this.minecraftVersion = minecraftVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.installDir = installDir;
 		this.generateProfile = generateProfile;
-		this.beaconOptOut = beaconOptOut;
 	}
 
 	@Override
@@ -92,7 +90,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 
 		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
-		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(installationInfo.manifest().getVersion(this.minecraftVersion)).thenCompose(vanillaLaunchJson -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion(), this.beaconOptOut).thenAccept(launchJson -> {
+		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(installationInfo.manifest().getVersion(this.minecraftVersion)).thenCompose(vanillaLaunchJson -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion()).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
 			try {

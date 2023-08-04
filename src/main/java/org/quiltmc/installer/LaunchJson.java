@@ -94,7 +94,7 @@ public final class LaunchJson {
 	/**
 	 * @return the launch json for a modded mc instance
 	 */
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion, boolean beaconOptOut) {
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion) {
 		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), type.getName(), gameVersion.id(side), loaderVersion);
 
 		return CompletableFuture.supplyAsync(() -> {
@@ -127,13 +127,12 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
-			if (beaconOptOut) {
+			if (type == LoaderType.QUILT) {
 				@SuppressWarnings("unchecked")
 				Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
-				arguments
-						.computeIfAbsent("jvm", (key) -> new ArrayList<>())
-						.add("-Dloader.disable_beacon=true");
+				arguments.computeIfAbsent("jvm", (key) -> new ArrayList<>()).add("-Dloader.disable_beacon=true");
 			}
+
 
 			// TODO: HACK HACK HACK: inject intermediary instead of hashed
 			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");

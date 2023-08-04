@@ -89,8 +89,8 @@ public abstract class Action<M> {
 		return new ListVersions(loaderType, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable String installDir, boolean generateProfile, boolean beaconOptOut) {
-		return new InstallClient(minecraftVersion, loaderType, loaderVersion, installDir, generateProfile, beaconOptOut);
+	public static InstallClient installClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable String installDir, boolean generateProfile) {
+		return new InstallClient(minecraftVersion, loaderType, loaderVersion, installDir, generateProfile);
 	}
 
 	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {

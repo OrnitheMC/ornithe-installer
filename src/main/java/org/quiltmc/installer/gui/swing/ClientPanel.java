@@ -48,6 +48,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
+	private JComponent telemetryCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
@@ -115,6 +116,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
+				if (telemetryCheckBox != null) {
+					telemetryCheckBox.setVisible(this.loaderType() == LoaderType.QUILT);
+				}
 			});
 		}
 
@@ -151,10 +155,11 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 
-			List<JComponent> beaconOptOutComponents = this.createBeaconOptOut();
-			if (beaconOptOutComponents != null) {
-				beaconOptOutComponents.forEach(row5::add);
-			}
+			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
+			row5.add(optOutBox);
+			optOutBox.setEnabled(false);
+			optOutBox.setVisible(false);
+			this.telemetryCheckBox = optOutBox;
 		}
 
 		// Install button
@@ -166,7 +171,10 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.installButton.setText(Localization.get("gui.install.loading"));
 			this.installButton.addActionListener(this::install);
 		}
+
 	}
+
+
 
 	private void install(ActionEvent event) {
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
@@ -177,8 +185,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				loaderType,
 				(String) this.loaderVersionSelector.getSelectedItem(),
 				this.installLocation.getText(),
-				this.generateProfile,
-				this.beaconOptOut
+				this.generateProfile
 		);
 
 		action.run(this);
