@@ -2,14 +2,13 @@ package org.quiltmc.installer;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MmcPackCreator {
-    public static String transformPackJson(String examplePackJson, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion){
+    public static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion){
         return examplePackJson
-                .replaceAll("\\$\\{mc_version}", gameVersion.id())
+                .replaceAll("\\$\\{mc_version}", gameVersion)
                 .replaceAll("\\$\\{loader_version}", loaderVersion)
                 .replaceAll("\\$\\{loader_name}", type.getFancyName() + " Loader")
                 .replaceAll(
@@ -20,7 +19,7 @@ public class MmcPackCreator {
                 );
     }
 
-    public static void compileMmcZip(File outPutDir,VersionManifest.Version gameVersion, LoaderType type, String loaderVersion){
+    public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion){
         File examplePackJson = new File("src/main/resources/packformat/mmc-pack.json");
         File exampleIntermediaryJson = new File("src/main/resources/packformat/patches/net.fabricmc.intermediary.json");
         File exampleInstanceCfg = new File("src/main/resources/packformat/instance.cfg");
@@ -31,9 +30,9 @@ public class MmcPackCreator {
                     Files.readString(examplePackJson.toPath()), gameVersion, type, loaderVersion
             );
             String transformedIntermediaryJson = Files.readString(exampleIntermediaryJson.toPath())
-                    .replaceAll("\\$\\{mc_version}", gameVersion.id());
+                    .replaceAll("\\$\\{mc_version}", gameVersion);
             String transformedInstanceCfg = Files.readString(exampleInstanceCfg.toPath())
-                    .replaceAll("\\$\\{mc_version}", gameVersion.id());
+                    .replaceAll("\\$\\{mc_version}", gameVersion);
 
             File tempDir = new File(outPutDir, ".temp");
             if (!tempDir.exists()) {
@@ -54,13 +53,9 @@ public class MmcPackCreator {
             File intermediaryJson = new File(patchesDir, "net.fabricmc.intermediary.json");
             intermediaryJson.createNewFile();
 
-            FileWriter packFileWriter = new FileWriter(packJson);
-            packFileWriter.write(transformedPackJson);
-            packFileWriter.close();
-
-            FileWriter intermediaryFileWriter = new FileWriter(intermediaryJson);
-            intermediaryFileWriter.write(transformedIntermediaryJson);
-            intermediaryFileWriter.close();
+            writeToFile(packJson, transformedPackJson);
+            writeToFile(intermediaryJson, transformedIntermediaryJson);
+            writeToFile(instanceCfg, transformedInstanceCfg);
 
             File zipFile = new File(outPutDir,"ornithe.zip");
             if (!zipFile.exists()) {
@@ -70,16 +65,14 @@ public class MmcPackCreator {
             FileOutputStream fileOut = new FileOutputStream(zipFile);
             ZipOutputStream zipOut = new ZipOutputStream(fileOut);
 
-            vvv(zipOut, icon, icon.getName());
-            vvv(zipOut, instanceCfg, instanceCfg.getName());
-            vvv(zipOut, packJson, packJson.getName());
-
-            System.out.println(patchesDir.getName());
+            addFileToZip(zipOut, icon, icon.getName());
+            addFileToZip(zipOut, instanceCfg, instanceCfg.getName());
+            addFileToZip(zipOut, packJson, packJson.getName());
 
             zipOut.putNextEntry(new ZipEntry(patchesDir.getName() + "/"));
             zipOut.closeEntry();
 
-            vvv(zipOut, intermediaryJson, patchesDir.getName() + "/" + intermediaryJson.getName());
+            addFileToZip(zipOut, intermediaryJson, patchesDir.getName() + "/" + intermediaryJson.getName());
 
             zipOut.close();
             fileOut.close();
@@ -94,7 +87,13 @@ public class MmcPackCreator {
         }
     }
 
-   public static void vvv(ZipOutputStream zipOut, File fileToZip, String fileName) throws IOException {
+    public static void writeToFile(File fileToBeWritten, String writing) throws IOException {
+        FileWriter fileWriter = new FileWriter(fileToBeWritten);
+        fileWriter.write(writing);
+        fileWriter.close();
+    }
+
+   public static void addFileToZip(ZipOutputStream zipOut, File fileToZip, String fileName) throws IOException {
        FileInputStream fis = new FileInputStream(fileToZip);
        ZipEntry zipEntry = new ZipEntry(fileName);
        zipOut.putNextEntry(zipEntry);
