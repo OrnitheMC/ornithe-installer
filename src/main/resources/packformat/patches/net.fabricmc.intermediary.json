@@ -1,0 +1,19 @@
+{
+    "formatVersion": 1,
+    "libraries": [
+        {
+            "name": "net.ornithemc:calamus-intermediary:${mc_version}",
+            "url": "https://maven.ornithemc.net/releases"
+        }
+    ],
+    "name": "Intermediary Mappings",
+    "requires": [
+        {
+            "equals": "${mc_version}",
+            "uid": "net.minecraft"
+        }
+    ],
+    "type": "release",
+    "uid": "net.fabricmc.intermediary",
+    "version": "${mc_version}"
+}
