@@ -293,13 +293,16 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 				throw new ParseException("library array entries must be strings", reader);
 			}
 
+			if(version != null) {
+				reader.skipValue();
+				continue;
+			};
+
 			String name = reader.nextString();
 			if (name.startsWith("org.lwjgl:lwjgl:")) {
 				version = name.substring(16);
-				break;
 			} else if (name.startsWith("org.lwjgl.lwjgl:lwjgl:")) {
 				version = name.substring(22);
-				break;
 			}
 		}
 
