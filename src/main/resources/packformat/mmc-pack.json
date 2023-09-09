@@ -1,18 +1,18 @@
 {
     "components": [
         {
-            "cachedName": "LWJGL 2",
-            "cachedVersion": "2.9.4-nightly-20150209",
+            "cachedName": "LWJGL ${lwjgl_major_ver}",
+            "cachedVersion": "{lwjgl_version}",
             "cachedVolatile": true,
             "dependencyOnly": true,
             "uid": "org.lwjgl",
-            "version": "2.9.4-nightly-20150209"
+            "version": "${lwjgl_version}"
         },
         {
             "cachedName": "Minecraft",
             "cachedRequires": [
                 {
-                    "suggests": "2.9.4-nightly-20150209",
+                    "suggests": "${lwjgl_version}",
                     "uid": "org.lwjgl"
                 }
             ],

@@ -6,7 +6,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MmcPackCreator {
-    public static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion){
+    public static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
         return examplePackJson
                 .replaceAll("\\$\\{mc_version}", gameVersion)
                 .replaceAll("\\$\\{loader_version}", loaderVersion)
@@ -16,10 +16,11 @@ public class MmcPackCreator {
                         type == LoaderType.FABRIC
                                 ? "net.fabricmc.fabric-loader"
                                 : "org.quiltmc.quilt-loader"
-                );
+                ).replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
+                .replaceAll("\\$\\{lwjgl_major_ver}", lwjglVersion.substring(0,1));
     }
 
-    public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion){
+    public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
         File examplePackJson = new File("src/main/resources/packformat/mmc-pack.json");
         File exampleIntermediaryJson = new File("src/main/resources/packformat/patches/net.fabricmc.intermediary.json");
         File exampleInstanceCfg = new File("src/main/resources/packformat/instance.cfg");
@@ -27,7 +28,7 @@ public class MmcPackCreator {
 
         try {
             String transformedPackJson = transformPackJson(
-                    Files.readString(examplePackJson.toPath()), gameVersion, type, loaderVersion
+                    Files.readString(examplePackJson.toPath()), gameVersion, type, loaderVersion, lwjglVersion
             );
             String transformedIntermediaryJson = Files.readString(exampleIntermediaryJson.toPath())
                     .replaceAll("\\$\\{mc_version}", gameVersion);
