@@ -23,13 +23,15 @@ import java.util.zip.ZipOutputStream;
 
 public class MmcPackCreator {
     public static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
+        String lwjglMajorVer = lwjglVersion.substring(0,1);
         return examplePackJson
                 .replaceAll("\\$\\{mc_version}", gameVersion)
                 .replaceAll("\\$\\{loader_version}", loaderVersion)
                 .replaceAll("\\$\\{loader_name}", type.getFancyName() + " Loader")
                 .replaceAll("\\$\\{loader_uid}", type.getMavenUid())
                 .replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
-                .replaceAll("\\$\\{lwjgl_major_ver}", lwjglVersion.substring(0,1));
+                .replaceAll("\\$\\{lwjgl_major_ver}", lwjglMajorVer)
+                .replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
     }
 
     public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){

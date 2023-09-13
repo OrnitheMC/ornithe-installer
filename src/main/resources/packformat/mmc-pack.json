@@ -5,7 +5,7 @@
             "cachedVersion": "${lwjgl_version}",
             "cachedVolatile": true,
             "dependencyOnly": true,
-            "uid": "org.lwjgl",
+            "uid": "${lwjgl_uid}",
             "version": "${lwjgl_version}"
         },
         {
@@ -13,7 +13,7 @@
             "cachedRequires": [
                 {
                     "suggests": "${lwjgl_version}",
-                    "uid": "org.lwjgl"
+                    "uid": "${lwjgl_uid}"
                 }
             ],
             "cachedVersion": "${mc_version}",
