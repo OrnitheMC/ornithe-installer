@@ -27,12 +27,8 @@ public class MmcPackCreator {
                 .replaceAll("\\$\\{mc_version}", gameVersion)
                 .replaceAll("\\$\\{loader_version}", loaderVersion)
                 .replaceAll("\\$\\{loader_name}", type.getFancyName() + " Loader")
-                .replaceAll(
-                        "\\$\\{loader_uid}",
-                        type == LoaderType.FABRIC
-                                ? "net.fabricmc.fabric-loader"
-                                : "org.quiltmc.quilt-loader"
-                ).replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
+                .replaceAll("\\$\\{loader_uid}", type.getMavenUid())
+                .replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
                 .replaceAll("\\$\\{lwjgl_major_ver}", lwjglVersion.substring(0,1));
     }
 

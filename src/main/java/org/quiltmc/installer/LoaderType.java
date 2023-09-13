@@ -18,19 +18,25 @@ package org.quiltmc.installer;
 
 public enum LoaderType {
 
-	FABRIC("fabric"),
-	QUILT("quilt");
+	FABRIC("fabric", "net.fabricmc.fabric-loader"),
+	QUILT("quilt", "org.quiltmc.quilt-loader");
 
 	private final String name;
 	private final String fancyName;
+	private final String mavenUid;
 
-	private LoaderType(String name) {
+	private LoaderType(String name, String uid) {
 		this.name = name;
 		this.fancyName = this.name.substring(0, 1).toUpperCase() + this.name.substring(1);
+		this.mavenUid = uid;
 	}
 
 	public String getName() {
 		return name;
+	}
+
+	public String getMavenUid() {
+		return mavenUid;
 	}
 
 	public String getFancyName() {
