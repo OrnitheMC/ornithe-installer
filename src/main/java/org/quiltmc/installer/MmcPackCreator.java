@@ -74,7 +74,7 @@ public class MmcPackCreator {
             writeToFile(intermediaryJson, transformedIntermediaryJson);
             writeToFile(instanceCfg, transformedInstanceCfg);
 
-            File zipFile = new File(outPutDir,"ornithe.zip");
+            File zipFile = new File(outPutDir,"Ornithe-" + gameVersion + ".zip");
             if (!zipFile.exists()) {
                 zipFile.createNewFile();
             }

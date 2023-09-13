@@ -19,13 +19,10 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
@@ -40,7 +37,6 @@ import org.quiltmc.installer.*;
 import org.quiltmc.installer.action.Action;
 import org.quiltmc.installer.action.InstallClient;
 import org.quiltmc.installer.action.MinecraftInstallation;
-import org.quiltmc.parsers.json.JsonReader;
 
 final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
@@ -57,7 +53,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
 	private boolean generateProfile;
-	private boolean generateMmcPack;
 
 	ClientPanel(SwingInstaller gui) {
 		super(gui);
@@ -91,10 +86,11 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			rowOnePointOne.add(new JLabel(Localization.get("gui.launcher.type")));
 			rowOnePointOne.add(this.launcherTypeSelector = new JComboBox<>());
 			this.launcherTypeSelector.setPreferredSize(new Dimension(200, 26));
-			this.launcherTypeSelector.addItem("Vanilla Launcher");
-			this.launcherTypeSelector.addItem("MultiMc/PrismLauncher");
+			for (LauncherType value : LauncherType.values()) {
+				this.launcherTypeSelector.addItem(value.getName());
+			}
 
-			this.generateMmcPack = false;
+			this.launcherTypeSelector.setSelectedItem(LauncherType.VANILLA.getName());
 		}
 
 		// Loader type
@@ -194,16 +190,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		// launcher type action handling
 		{
 			this.launcherTypeSelector.addItemListener(item -> {
-				String launcher = (String) item.getItem();
-				if(launcher.equals("Vanilla Launcher")){
-					this.generateMmcPack = false;
+				LauncherType launcher = LauncherType.of((String) item.getItem());
 
+				if (launcher == LauncherType.VANILLA) {
 					this.generateProfileCheckBox.setVisible(true);
 					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 					this.installButton.setText(Localization.get("gui.install"));
-				} else {
-					this.generateMmcPack = true;
-
+				} else if (launcher == LauncherType.MULTIMC) {
 					this.generateProfileCheckBox.setVisible(false);
 					this.installButton.setText(Localization.get("gui.install.mmc"));
 					this.installLocation.setText(System.getProperty("user.dir"));
@@ -217,8 +210,9 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private void install(ActionEvent event) {
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
 		LoaderType loaderType = LoaderType.of(selectedType);
+		LauncherType launcherType = LauncherType.of(((String) this.launcherTypeSelector.getSelectedItem()));
 
-		if(this.generateMmcPack){
+		if (launcherType == LauncherType.MULTIMC) {
 			MinecraftInstallation.getInfo(
 					GameSide.CLIENT,
 					(String) this.minecraftVersionSelector.getSelectedItem(),
@@ -235,7 +229,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 								version.details().getLwjglVersion()
 						);
 			}).thenRun( () -> showMmcPackGenerationMessage(loaderType));
-		} else {
+		} else if (launcherType == LauncherType.VANILLA) {
 			Action<InstallClient.MessageType> action = Action.installClient(
 					(String) this.minecraftVersionSelector.getSelectedItem(),
 					loaderType,
