@@ -19,9 +19,11 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
@@ -32,16 +34,15 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.installer.GameSide;
-import org.quiltmc.installer.LoaderType;
-import org.quiltmc.installer.Localization;
-import org.quiltmc.installer.OsPaths;
-import org.quiltmc.installer.VersionManifest;
+import org.quiltmc.installer.*;
 import org.quiltmc.installer.action.Action;
 import org.quiltmc.installer.action.InstallClient;
+import org.quiltmc.installer.action.MinecraftInstallation;
+import org.quiltmc.parsers.json.JsonReader;
 
 final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
+	private final JComboBox<String> launcherTypeSelector;
 	private final JComboBox<String> loaderTypeSelector;
 	private final JComboBox<String> loaderVersionSelector;
 	private final JCheckBox showSnapshotsCheckBox;
@@ -78,6 +79,16 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 					populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
 				}
 			});
+		}
+
+		{
+			JComponent rowOnePointOne = this.addRow();
+
+			rowOnePointOne.add(new JLabel(Localization.get("gui.launcher.type")));
+			rowOnePointOne.add(this.launcherTypeSelector = new JComboBox<>());
+			this.launcherTypeSelector.setPreferredSize(new Dimension(200, 26));
+			this.launcherTypeSelector.addItem("Vanila Launcher");
+			this.launcherTypeSelector.addItem("MultiMc/PrismLauncher");
 		}
 
 		// Loader type
@@ -172,6 +183,19 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.installButton.addActionListener(this::install);
 		}
 
+		// launcher type action handling
+		{
+			this.launcherTypeSelector.addItemListener(item -> {
+				String launcher = (String) item.getItem();
+				if(launcher.equals("Vanila Launcher")){
+					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
+					this.installButton.setText(Localization.get("gui.install"));
+				} else {
+					this.installButton.setText(Localization.get("gui.install.mmc"));
+					this.installLocation.setText(System.getProperty("user.dir"));
+				}
+			});
+		}
 	}
 
 
@@ -179,6 +203,18 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private void install(ActionEvent event) {
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
 		LoaderType loaderType = LoaderType.of(selectedType);
+
+
+		MinecraftInstallation.getInfo(
+				GameSide.CLIENT,
+				(String) this.minecraftVersionSelector.getSelectedItem(),
+				loaderType,
+				(String) this.loaderVersionSelector.getSelectedItem()
+		).thenAccept(installationInfo -> {
+			installationInfo.manifest().getVersion((String) this.loaderVersionSelector.getSelectedItem());
+		});
+
+		if(1 < 2) return;;
 
 		Action<InstallClient.MessageType> action = Action.installClient(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
