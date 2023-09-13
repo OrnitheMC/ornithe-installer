@@ -52,6 +52,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
 	private JComponent telemetryCheckBox;
+	private JCheckBox generateProfileCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
@@ -90,7 +91,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			rowOnePointOne.add(new JLabel(Localization.get("gui.launcher.type")));
 			rowOnePointOne.add(this.launcherTypeSelector = new JComboBox<>());
 			this.launcherTypeSelector.setPreferredSize(new Dimension(200, 26));
-			this.launcherTypeSelector.addItem("Vanila Launcher");
+			this.launcherTypeSelector.addItem("Vanilla Launcher");
 			this.launcherTypeSelector.addItem("MultiMc/PrismLauncher");
 
 			this.generateMmcPack = false;
@@ -164,12 +165,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		{
 			JComponent row5 = this.addRow();
 
-			JCheckBox generateProfile;
-			row5.add(generateProfile = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
-			generateProfile.addItemListener(e -> {
+			JCheckBox generateProfileBox;
+			row5.add(generateProfileBox = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
+			generateProfileBox.addItemListener(e -> {
 				this.generateProfile = e.getStateChange() == ItemEvent.SELECTED;
 			});
 			this.generateProfile = true;
+			this.generateProfileCheckBox = generateProfileBox;
+
 
 			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
 			row5.add(optOutBox);
@@ -192,14 +195,16 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		{
 			this.launcherTypeSelector.addItemListener(item -> {
 				String launcher = (String) item.getItem();
-				if(launcher.equals("Vanila Launcher")){
+				if(launcher.equals("Vanilla Launcher")){
 					this.generateMmcPack = false;
 
+					this.generateProfileCheckBox.setVisible(true);
 					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 					this.installButton.setText(Localization.get("gui.install"));
 				} else {
 					this.generateMmcPack = true;
 
+					this.generateProfileCheckBox.setVisible(false);
 					this.installButton.setText(Localization.get("gui.install.mmc"));
 					this.installLocation.setText(System.getProperty("user.dir"));
 				}
