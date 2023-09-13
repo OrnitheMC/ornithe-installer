@@ -210,6 +210,11 @@ abstract class AbstractPanel extends JPanel {
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 
+	protected static void showMmcPackGenerationMessage(LoaderType type){
+		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getFancyName()),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+	}
+
 	private static String buildEditorPaneStyle() {
 		JLabel label = new JLabel();
 		Font font = label.getFont();

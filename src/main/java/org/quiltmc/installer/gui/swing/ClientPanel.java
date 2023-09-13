@@ -19,7 +19,9 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
 	private boolean generateProfile;
+	private boolean generateMmcPack;
 
 	ClientPanel(SwingInstaller gui) {
 		super(gui);
@@ -89,6 +92,8 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.launcherTypeSelector.setPreferredSize(new Dimension(200, 26));
 			this.launcherTypeSelector.addItem("Vanila Launcher");
 			this.launcherTypeSelector.addItem("MultiMc/PrismLauncher");
+
+			this.generateMmcPack = false;
 		}
 
 		// Loader type
@@ -188,9 +193,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.launcherTypeSelector.addItemListener(item -> {
 				String launcher = (String) item.getItem();
 				if(launcher.equals("Vanila Launcher")){
+					this.generateMmcPack = false;
+
 					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 					this.installButton.setText(Localization.get("gui.install"));
 				} else {
+					this.generateMmcPack = true;
+
 					this.installButton.setText(Localization.get("gui.install.mmc"));
 					this.installLocation.setText(System.getProperty("user.dir"));
 				}
@@ -204,29 +213,36 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
 		LoaderType loaderType = LoaderType.of(selectedType);
 
+		if(this.generateMmcPack){
+			MinecraftInstallation.getInfo(
+					GameSide.CLIENT,
+					(String) this.minecraftVersionSelector.getSelectedItem(),
+					loaderType,
+					(String) this.loaderVersionSelector.getSelectedItem()
+			).thenAccept(installationInfo -> {
+						VersionManifest.Version version = installationInfo.manifest().getVersion((String) this.minecraftVersionSelector.getSelectedItem());
 
-		MinecraftInstallation.getInfo(
-				GameSide.CLIENT,
-				(String) this.minecraftVersionSelector.getSelectedItem(),
-				loaderType,
-				(String) this.loaderVersionSelector.getSelectedItem()
-		).thenAccept(installationInfo -> {
-			installationInfo.manifest().getVersion((String) this.loaderVersionSelector.getSelectedItem());
-		});
+						MmcPackCreator.compileMmcZip(
+								Paths.get(this.installLocation.getText()).toFile(),
+								((String) this.minecraftVersionSelector.getSelectedItem()),
+								loaderType,
+								((String) this.loaderVersionSelector.getSelectedItem()),
+								version.details().getLwjglVersion()
+						);
+			}).thenRun( () -> showMmcPackGenerationMessage(loaderType));
+		} else {
+			Action<InstallClient.MessageType> action = Action.installClient(
+					(String) this.minecraftVersionSelector.getSelectedItem(),
+					loaderType,
+					(String) this.loaderVersionSelector.getSelectedItem(),
+					this.installLocation.getText(),
+					this.generateProfile
+			);
 
-		if(1 < 2) return;;
+			action.run(this);
+			showInstalledMessage(loaderType);
+		}
 
-		Action<InstallClient.MessageType> action = Action.installClient(
-				(String) this.minecraftVersionSelector.getSelectedItem(),
-				loaderType,
-				(String) this.loaderVersionSelector.getSelectedItem(),
-				this.installLocation.getText(),
-				this.generateProfile
-		);
-
-		action.run(this);
-
-		showInstalledMessage(loaderType);
 	}
 
 	@Override
