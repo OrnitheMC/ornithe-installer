@@ -69,7 +69,7 @@ public final class LauncherProfiles {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> profiles = (Map<String, Object>) rawProfiles;
-		String newProfileName = loaderType.getFancyName() + " " + gameVersion;
+		String newProfileName = loaderType.getLocalizedName() + " " + gameVersion;
 
 		// Modify the profile
 		if (profiles.containsKey(newProfileName)) {

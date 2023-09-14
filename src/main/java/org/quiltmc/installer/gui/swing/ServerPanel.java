@@ -40,7 +40,7 @@ import org.quiltmc.parsers.json.JsonReader;
 
 final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
-	private final JComboBox<String> loaderTypeSelector;
+	private final JComboBox<LoaderLabel> loaderTypeSelector;
 	private final JComboBox<String> loaderVersionSelector;
 	private final JCheckBox showSnapshotsCheckBox;
 	private final JCheckBox showLoaderBetasCheckBox;
@@ -91,7 +91,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 			row2.add(this.loaderTypeSelector = new JComboBox<>());
 			this.loaderTypeSelector.setPreferredSize(new Dimension(200, 26));
 			for (LoaderType type : LoaderType.values()) {
-				this.loaderTypeSelector.addItem(type.getFancyName());
+				this.loaderTypeSelector.addItem(new LoaderLabel(type));
 			}
 			this.loaderTypeSelector.setEnabled(true);
 		}
@@ -174,7 +174,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 
 	@Override
 	LoaderType loaderType() {
-		return LoaderType.of(((String) this.loaderTypeSelector.getSelectedItem()));
+		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
 	@Override
@@ -214,8 +214,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 			return;
 		}
 
-		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
-		LoaderType loaderType = LoaderType.of(selectedType);
+		LoaderType loaderType = this.loaderType();
 
 		InstallServer action = Action.installServer(
 				(String) this.minecraftVersionSelector.getSelectedItem(),

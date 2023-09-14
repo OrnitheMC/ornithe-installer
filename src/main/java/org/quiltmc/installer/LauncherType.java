@@ -18,28 +18,30 @@ package org.quiltmc.installer;
 
 public enum LauncherType {
 
-	VANILLA("Vanilla Launcher"),
-	MULTIMC("MultiMc/PrismLauncher");
+	OFFICIAL,
+	MULTIMC;
 
 	private final String name;
 
-	private LauncherType(String name) {
-		this.name = name;
+	private String localizedName;
+
+	private LauncherType() {
+		this.name = this.name().toLowerCase();
 	}
 
 	public String getName() {
-		return name;
+		return this.name;
+	}
+
+	public String getLocalizedName() {
+		if (this.localizedName == null) {
+			this.localizedName = Localization.get("gui.launcher.type." + this.name);
+		}
+
+		return this.localizedName;
 	}
 
 	public static LauncherType of(String name) {
-		String nameToCheck = name;
-
-		if (name.contains(" ")) {
-			nameToCheck = name.split(" ")[0].toUpperCase();
-		} else if (name.contains("/")) {
-			nameToCheck = name.split("/")[0].toUpperCase();
-		}
-
-		return valueOf(nameToCheck);
+		return valueOf(name.toUpperCase());
 	}
 }

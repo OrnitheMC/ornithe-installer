@@ -27,7 +27,7 @@ public class MmcPackCreator {
 		return examplePackJson
 				.replaceAll("\\$\\{mc_version}", gameVersion)
 				.replaceAll("\\$\\{loader_version}", loaderVersion)
-				.replaceAll("\\$\\{loader_name}", type.getFancyName() + " Loader")
+				.replaceAll("\\$\\{loader_name}", type.getLocalizedName() + " Loader")
 				.replaceAll("\\$\\{loader_uid}", type.getMavenUid())
 				.replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
 				.replaceAll("\\$\\{lwjgl_major_ver}", lwjglMajorVer)
