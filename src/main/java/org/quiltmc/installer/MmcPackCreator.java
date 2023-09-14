@@ -35,7 +35,7 @@ public class MmcPackCreator {
 	}
 
 	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
-		String examplePackDir = "packformat";
+		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
 		String instanceCfgPath = "instance.cfg";
