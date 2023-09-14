@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.OsPaths;
-import org.quiltmc.installer.VersionManifest;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LauncherProfiles;
@@ -208,14 +207,12 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
 		installationInfoFuture.thenAccept(installationInfo -> {
-			VersionManifest.Version version = installationInfo.manifest().getVersion(this.minecraftVersion);
-
 			MmcPackCreator.compileMmcZip(
 					Paths.get(this.installDir).toFile(),
 					this.minecraftVersion,
 					this.loaderType,
 					this.loaderVersion,
-					version.details().lwjglVersion()
+					installationInfo.manifest()
 			);
 		}).exceptionally(e -> {
 			eprintln("Failed to generate multimc pack");

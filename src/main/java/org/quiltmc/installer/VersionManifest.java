@@ -241,7 +241,6 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		List<String> manifests = null;
 		Boolean sharedMappings = null;
-		String lwjglVersion = null;
 
 		reader.beginObject();
 
@@ -263,12 +262,6 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 				sharedMappings = reader.nextBoolean();
 				break;
-			case "libraries" :
-				if(reader.peek() != JsonToken.BEGIN_ARRAY){
-					throw new ParseException("libraries must be an array", reader);
-				}
-				lwjglVersion = getLwjglVersion(reader);
-				break;
 			default:
 				reader.skipValue();
 			}
@@ -278,36 +271,8 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		if (manifests == null) throw new ParseException("manifests is required", reader);
 		if (sharedMappings == null) throw new ParseException("sharedMappings is required", reader);
-		if (version == null) throw new ParseException("LWJGL version is required", reader);
 
-		return new VersionDetails(version, manifests, lwjglVersion, sharedMappings);
-	}
-
-	private static String getLwjglVersion(JsonReader reader) throws IOException {
-		String version = null;
-
-		reader.beginArray();
-
-		while (reader.hasNext()) {
-			if (reader.peek() != JsonToken.STRING) {
-				throw new ParseException("library array entries must be strings", reader);
-			}
-
-			if(version != null) {
-				reader.skipValue();
-				continue;
-			};
-
-			String name = reader.nextString();
-			if (name.startsWith("org.lwjgl:lwjgl:")) {
-				version = name.substring(16);
-			} else if (name.startsWith("org.lwjgl.lwjgl:lwjgl:")) {
-				version = name.substring(22);
-			}
-		}
-
-		reader.endArray();
-		return version;
+		return new VersionDetails(version, manifests, sharedMappings);
 	}
 
 	private static List<String> readManifests(Version version, JsonReader reader) throws IOException, ParseException {
@@ -448,12 +413,10 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 		private final Version version;
 		private final List<String> manifests;
 		private final boolean sharedMappings;
-		private final String lwjglVersion;
 
-		VersionDetails(Version version, List<String> manifests, String lwjglVersion, boolean sharedMappings) {
+		VersionDetails(Version version, List<String> manifests, boolean sharedMappings) {
 			this.version = version;
 			this.manifests = manifests;
-			this.lwjglVersion = lwjglVersion;
 			this.sharedMappings = sharedMappings;
 		}
 
@@ -463,10 +426,6 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		public List<String> manifests() {
 			return this.manifests;
-		}
-
-		public String lwjglVersion() {
-			return lwjglVersion;
 		}
 
 		public boolean sharedMappings() {

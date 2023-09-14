@@ -17,12 +17,89 @@
 package org.quiltmc.installer;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.quiltmc.parsers.json.JsonReader;
+import org.quiltmc.parsers.json.JsonToken;
+
 public class MmcPackCreator {
-	public static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
+	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
+		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
+			try {
+				URL url = new URL(rawUrl);
+				URLConnection connection = Connections.openConnection(url);
+
+				try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
+					String lwjglVersion = findLwjglVersion(reader);
+
+					if (lwjglVersion != null) {
+						return lwjglVersion;
+					}
+				}
+			} catch (IOException e) {
+				throw new RuntimeException("issue while finding lwjgl version for Minecraft " + gameVersion, e);
+			}
+		}
+
+		throw new RuntimeException("unable to find lwjgl version for Minecraft " + gameVersion);
+	}
+
+	private static String findLwjglVersion(JsonReader reader) throws IOException, ParseException {
+		if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+			throw new ParseException("Version Manifest was invalid type", reader);
+		}
+
+		while (reader.hasNext()) {
+			switch (reader.nextName()) {
+			case "libraries":
+				if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+					throw new ParseException("libraries must be an array", reader);
+				}
+
+				reader.beginArray();
+
+				while (reader.hasNext()) {
+					if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+						throw new ParseException("library entries must all be objects", reader);
+					}
+
+					reader.beginObject();
+
+					while (reader.hasNext()) {
+						switch (reader.nextName()) {
+						case "name":
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("library name must be a string", reader);
+							}
+
+							String lwjgl = reader.nextString();
+							String[] split = lwjgl.split("[:]");
+
+							return split[2];
+						default:
+							reader.skipValue();
+						}
+					}
+
+					reader.endObject();
+				}
+
+				reader.endArray();
+
+				break;
+			default:
+				reader.skipValue();
+			}
+		}
+
+		return null;
+	}
+
+	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
 		String lwjglMajorVer = lwjglVersion.substring(0,1);
 		return examplePackJson
 				.replaceAll("\\$\\{mc_version}", gameVersion)
@@ -34,7 +111,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
+	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, VersionManifest manifest){
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
@@ -43,7 +120,7 @@ public class MmcPackCreator {
 
 		try {
 			String transformedPackJson = transformPackJson(
-					readResource(examplePackDir, packJsonPath), gameVersion, type, loaderVersion, lwjglVersion
+					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, findLwjglVersion(manifest, gameVersion)
 			);
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
