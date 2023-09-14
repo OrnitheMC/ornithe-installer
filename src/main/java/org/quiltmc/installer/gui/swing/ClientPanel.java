@@ -229,7 +229,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 								((String) this.minecraftVersionSelector.getSelectedItem()),
 								loaderType,
 								((String) this.loaderVersionSelector.getSelectedItem()),
-								version.details().getLwjglVersion()
+								version.details().lwjglVersion()
 						);
 			}).thenRun( () -> showMmcPackGenerationMessage(loaderType));
 		}

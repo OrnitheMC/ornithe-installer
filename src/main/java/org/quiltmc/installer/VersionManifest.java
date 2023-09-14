@@ -465,7 +465,7 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 			return this.manifests;
 		}
 
-		public String getLwjglVersion() {
+		public String lwjglVersion() {
 			return lwjglVersion;
 		}
 

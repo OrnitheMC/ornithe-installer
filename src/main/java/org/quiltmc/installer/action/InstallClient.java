@@ -215,7 +215,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 					this.minecraftVersion,
 					this.loaderType,
 					this.loaderVersion,
-					version.details().getLwjglVersion()
+					version.details().lwjglVersion()
 			);
 		}).exceptionally(e -> {
 			eprintln("Failed to generate multimc pack");
