@@ -30,6 +30,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 import org.jetbrains.annotations.Nullable;
@@ -231,19 +232,28 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 								version.details().getLwjglVersion()
 						);
 			}).thenRun( () -> showMmcPackGenerationMessage(loaderType));
-		} else if (launcherType == LauncherType.OFFICIAL) {
-			Action<InstallClient.MessageType> action = Action.installClient(
-					(String) this.minecraftVersionSelector.getSelectedItem(),
-					loaderType,
-					(String) this.loaderVersionSelector.getSelectedItem(),
-					this.installLocation.getText(),
-					this.generateProfile
-			);
+		}
+		Action<InstallClient.MessageType> action = Action.installClient(
+				(String) this.minecraftVersionSelector.getSelectedItem(),
+				launcherType,
+				loaderType,
+				(String) this.loaderVersionSelector.getSelectedItem(),
+				this.installLocation.getText(),
+				this.generateProfile
+		);
 
-			action.run(this);
+		action.run(this);
+
+		if (launcherType == LauncherType.MULTIMC) {
+			showMmcPackGenerationMessage(loaderType);
+		} else {
 			showInstalledMessage(loaderType);
 		}
+	}
 
+	private static void showMmcPackGenerationMessage(LoaderType type){
+		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getLocalizedName()),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	LauncherType launcherType() {

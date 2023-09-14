@@ -4,12 +4,13 @@ Usage: {0}
          (prints this help message)
    or  {0} listVersions <loader-type> [VERSION-OPTIONS]
          (lists available Minecraft versions)
-   or  {0} install client <minecraft-version> <loader-type> [<loader-version>] [CLIENT-INSTALL-OPTIONS]
+   or  {0} install client <minecraft-version> <launcher-type> <loader-type> [<loader-version>] [CLIENT-INSTALL-OPTIONS]
          (creates a new instance of the specified Minecraft version for the Minecraft Launcher)
    or  {0} install server <minecraft-version> <loader-type> [<loader-version>] [SERVER-INSTALL-OPTIONS]
          (creates a Minecraft server installation of the specified Minecraft version)
 
 The minecraft version argument specifies to the Minecraft version to install.
+The launcher type argument specifies the launcher to install into (can be Official or MultiMC).
 The loader type argument specifies the mod loader to install (can be Fabric or Quilt).
 The loader version argument specifies the version of loader to install.
 
