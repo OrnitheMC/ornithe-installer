@@ -53,6 +53,8 @@ public class MmcPackCreator {
 			throw new ParseException("Version Manifest was invalid type", reader);
 		}
 
+		reader.beginObject();
+
 		while (reader.hasNext()) {
 			switch (reader.nextName()) {
 			case "libraries":
@@ -76,10 +78,16 @@ public class MmcPackCreator {
 								throw new ParseException("library name must be a string", reader);
 							}
 
-							String lwjgl = reader.nextString();
-							String[] split = lwjgl.split("[:]");
+							String name = reader.nextString();
+							String[] maven = name.split("[:]");
+							String artifact = maven[1];
+							String version = maven[2];
 
-							return split[2];
+							if (artifact.equals("lwjgl")) {
+								return version;
+							}
+
+							break;
 						default:
 							reader.skipValue();
 						}
@@ -95,6 +103,8 @@ public class MmcPackCreator {
 				reader.skipValue();
 			}
 		}
+
+		reader.endObject();
 
 		return null;
 	}
