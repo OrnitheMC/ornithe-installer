@@ -19,7 +19,6 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.*;
 import org.quiltmc.installer.action.Action;
 import org.quiltmc.installer.action.InstallClient;
-import org.quiltmc.installer.action.MinecraftInstallation;
 
 final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
@@ -215,24 +213,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
 
-		if (launcherType == LauncherType.MULTIMC) {
-			MinecraftInstallation.getInfo(
-					GameSide.CLIENT,
-					(String) this.minecraftVersionSelector.getSelectedItem(),
-					loaderType,
-					(String) this.loaderVersionSelector.getSelectedItem()
-			).thenAccept(installationInfo -> {
-						VersionManifest.Version version = installationInfo.manifest().getVersion((String) this.minecraftVersionSelector.getSelectedItem());
-
-						MmcPackCreator.compileMmcZip(
-								Paths.get(this.installLocation.getText()).toFile(),
-								((String) this.minecraftVersionSelector.getSelectedItem()),
-								loaderType,
-								((String) this.loaderVersionSelector.getSelectedItem()),
-								version.details().lwjglVersion()
-						);
-			}).thenRun( () -> showMmcPackGenerationMessage(loaderType));
-		}
 		Action<InstallClient.MessageType> action = Action.installClient(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
 				launcherType,
