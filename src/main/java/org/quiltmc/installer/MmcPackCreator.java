@@ -20,6 +20,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -27,6 +28,8 @@ import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
 
 public class MmcPackCreator {
+	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=\"env __GL_THREADED_OPTIMIZATIONS=0\"";
+	private static final String OS = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
 		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
 			try {
@@ -136,6 +139,10 @@ public class MmcPackCreator {
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
+
+			if(MmcPackCreator.OS.contains("linux") || !(MmcPackCreator.OS.contains("win") || MmcPackCreator.OS.contains("mac"))){
+				transformedInstanceCfg+= "\n" +"OverrideCommands=true" +"\n" + ENV_WRAPPER_COMMAND;
+			}
 
 			File zipFile = new File(outPutDir,"Ornithe-" + gameVersion + ".zip");
 			if (zipFile.exists()) {
