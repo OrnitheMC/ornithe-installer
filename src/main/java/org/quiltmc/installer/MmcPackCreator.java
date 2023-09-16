@@ -29,7 +29,7 @@ import org.quiltmc.parsers.json.JsonToken;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=\"env __GL_THREADED_OPTIMIZATIONS=0\"";
-	private static final String OS = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+	private static final boolean IS_LINUX_LIKE_OS;
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
 		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
 			try {
@@ -140,7 +140,7 @@ public class MmcPackCreator {
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
-			if(MmcPackCreator.OS.contains("linux") || !(MmcPackCreator.OS.contains("win") || MmcPackCreator.OS.contains("mac"))){
+			if(IS_LINUX_LIKE_OS){
 				transformedInstanceCfg+= "\n" +"OverrideCommands=true" +"\n" + ENV_WRAPPER_COMMAND;
 			}
 
@@ -189,5 +189,10 @@ public class MmcPackCreator {
 		ZipEntry zipEntry = new ZipEntry(path);
 		zipOut.putNextEntry(zipEntry);
 		zipOut.write(bytes);
+	}
+
+	static {
+		String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+		IS_LINUX_LIKE_OS = os.contains("linux") || !(os.contains("win") || os.contains("mac"));
 	}
 }
