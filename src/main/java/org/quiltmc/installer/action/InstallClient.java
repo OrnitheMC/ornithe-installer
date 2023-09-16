@@ -35,13 +35,16 @@ import org.quiltmc.installer.OsPaths;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LauncherProfiles;
+import org.quiltmc.installer.LauncherType;
 import org.quiltmc.installer.LoaderType;
+import org.quiltmc.installer.MmcPackCreator;
 
 /**
  * An action which installs a new client instance.
  */
 public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final String minecraftVersion;
+	private final LauncherType launcherType;
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
@@ -49,8 +52,9 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final boolean generateProfile;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
 		this.minecraftVersion = minecraftVersion;
+		this.launcherType = launcherType;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.installDir = installDir;
@@ -59,6 +63,19 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 
 	@Override
 	public void run(Consumer<MessageType> statusTracker) {
+		switch (this.launcherType) {
+		case OFFICIAL:
+			this.installOfficial();
+			break;
+		case MULTIMC:
+			this.installMultimc();
+			break;
+		default:
+			throw new RuntimeException("don't know how to install into " + this.launcherType);
+		}
+	}
+
+	private void installOfficial() {
 		Path installDir;
 
 		if (this.installDir == null) {
@@ -184,6 +201,25 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e); // Handle via exceptionally
 		}
+	}
+
+	private void installMultimc() {
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
+
+		installationInfoFuture.thenAccept(installationInfo -> {
+			MmcPackCreator.compileMmcZip(
+					Paths.get(this.installDir).toFile(),
+					this.minecraftVersion,
+					this.loaderType,
+					this.loaderVersion,
+					installationInfo.manifest()
+			);
+		}).exceptionally(e -> {
+			eprintln("Failed to generate multimc pack");
+			e.printStackTrace();
+			System.exit(1);
+			return null;
+		}).join();
 	}
 
 	public enum MessageType {

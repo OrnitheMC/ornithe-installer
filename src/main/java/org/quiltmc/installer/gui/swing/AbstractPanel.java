@@ -206,7 +206,7 @@ abstract class AbstractPanel extends JPanel {
 	}
 
 	protected static void showInstalledMessage(LoaderType type) {
-		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getFancyName()),
+		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getLocalizedName()),
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 
@@ -221,8 +221,24 @@ abstract class AbstractPanel extends JPanel {
 		);
 	}
 
-	 static void displayError(Component parent, Throwable throwable) {
+	static void displayError(Component parent, Throwable throwable) {
 		JOptionPane.showMessageDialog(parent, throwable.toString(), "Error!", JOptionPane.ERROR_MESSAGE);
 		throwable.printStackTrace();
+	}
+
+	class LoaderLabel extends JLabel {
+
+		public final LoaderType type;
+
+		public LoaderLabel(LoaderType type) {
+			super(type.getLocalizedName());
+			this.type = type;
+		}
+
+		// needed for it to render correctly
+		@Override
+		public String toString() {
+			return this.getText();
+		}
 	}
 }

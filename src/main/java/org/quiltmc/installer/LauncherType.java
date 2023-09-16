@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 QuiltMC
+ * Copyright 2021 QuiltMC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,32 @@
 
 package org.quiltmc.installer;
 
-public enum LoaderType {
+public enum LauncherType {
 
-	FABRIC("net.fabricmc.fabric-loader"),
-	QUILT("org.quiltmc.quilt-loader");
+	OFFICIAL,
+	MULTIMC;
 
 	private final String name;
-	private final String mavenUid;
 
 	private String localizedName;
 
-	private LoaderType(String uid) {
+	private LauncherType() {
 		this.name = this.name().toLowerCase();
-		this.mavenUid = uid;
 	}
 
 	public String getName() {
 		return this.name;
 	}
 
-	public String getMavenUid() {
-		return this.mavenUid;
-	}
-
 	public String getLocalizedName() {
 		if (this.localizedName == null) {
-			this.localizedName = Localization.get("gui.loader.type." + this.name);
+			this.localizedName = Localization.get("gui.launcher.type." + this.name);
 		}
 
 		return this.localizedName;
 	}
 
-	public static LoaderType of(String name) {
+	public static LauncherType of(String name) {
 		return valueOf(name.toUpperCase());
 	}
 }

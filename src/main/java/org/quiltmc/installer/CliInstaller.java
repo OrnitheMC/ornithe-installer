@@ -123,14 +123,24 @@ public final class CliInstaller {
 					return Action.DISPLAY_HELP;
 				}
 				if (split.size() < 2) {
+					System.err.println("Launcher type is required");
+					return Action.DISPLAY_HELP;
+				}
+				if (split.size() < 3) {
 					System.err.println("Loader type is required");
 					return Action.DISPLAY_HELP;
 				}
 
 				String minecraftVersion = split.remove();
+				String rawLauncherType = split.remove();
 				String rawLoaderType = split.remove();
+				LauncherType launcherType = LauncherType.of(rawLauncherType);
 				LoaderType loaderType = LoaderType.of(rawLoaderType);
 
+				if (launcherType == null) {
+					System.err.println("Unknown launcher type: " + rawLauncherType);
+					return Action.DISPLAY_HELP;
+				}
 				if (loaderType == null) {
 					System.err.println("Unknown loader type: " + rawLoaderType);
 					return Action.DISPLAY_HELP;
@@ -138,7 +148,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, loaderType, null, null, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, null, null, false);
 				}
 
 				// Try to parse loader version first
@@ -153,7 +163,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, loaderType, loaderVersion, null, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, null, false);
 				}
 
 				// There are some additional options
@@ -211,7 +221,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installClient(minecraftVersion, loaderType, loaderVersion, options.get("--install-dir"), !options.containsKey("--no-profile"));
+				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, options.get("--install-dir"), !options.containsKey("--no-profile"));
 			}
 			case "server": {
 				if (split.size() < 1) {

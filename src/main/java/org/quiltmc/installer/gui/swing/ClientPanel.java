@@ -29,26 +29,25 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 import org.jetbrains.annotations.Nullable;
-import org.quiltmc.installer.GameSide;
-import org.quiltmc.installer.LoaderType;
-import org.quiltmc.installer.Localization;
-import org.quiltmc.installer.OsPaths;
-import org.quiltmc.installer.VersionManifest;
+import org.quiltmc.installer.*;
 import org.quiltmc.installer.action.Action;
 import org.quiltmc.installer.action.InstallClient;
 
 final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
-	private final JComboBox<String> loaderTypeSelector;
+	private final JComboBox<LauncherLabel> launcherTypeSelector;
+	private final JComboBox<LoaderLabel> loaderTypeSelector;
 	private final JComboBox<String> loaderVersionSelector;
 	private final JCheckBox showSnapshotsCheckBox;
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
 	private JComponent telemetryCheckBox;
+	private JCheckBox generateProfileCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
@@ -80,6 +79,19 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 		}
 
+		{
+			JComponent rowOnePointOne = this.addRow();
+
+			rowOnePointOne.add(new JLabel(Localization.get("gui.launcher.type")));
+			rowOnePointOne.add(this.launcherTypeSelector = new JComboBox<>());
+			this.launcherTypeSelector.setPreferredSize(new Dimension(200, 26));
+			for (LauncherType type : LauncherType.values()) {
+				this.launcherTypeSelector.addItem(new LauncherLabel(type));
+			}
+
+			this.launcherTypeSelector.setEnabled(true);
+		}
+
 		// Loader type
 		{
 			JComponent row2 = this.addRow();
@@ -88,7 +100,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			row2.add(this.loaderTypeSelector = new JComboBox<>());
 			this.loaderTypeSelector.setPreferredSize(new Dimension(200, 26));
 			for (LoaderType type : LoaderType.values()) {
-				this.loaderTypeSelector.addItem(type.getFancyName());
+				this.loaderTypeSelector.addItem(new LoaderLabel(type));
 			}
 			this.loaderTypeSelector.setEnabled(true);
 		}
@@ -148,12 +160,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		{
 			JComponent row5 = this.addRow();
 
-			JCheckBox generateProfile;
-			row5.add(generateProfile = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
-			generateProfile.addItemListener(e -> {
+			JCheckBox generateProfileBox;
+			row5.add(generateProfileBox = new JCheckBox(Localization.get("gui.client.generate-profile"), null, true));
+			generateProfileBox.addItemListener(e -> {
 				this.generateProfile = e.getStateChange() == ItemEvent.SELECTED;
 			});
 			this.generateProfile = true;
+			this.generateProfileCheckBox = generateProfileBox;
+
 
 			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
 			row5.add(optOutBox);
@@ -172,16 +186,36 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			this.installButton.addActionListener(this::install);
 		}
 
+		// launcher type action handling
+		{
+			this.launcherTypeSelector.addItemListener(item -> {
+				switch (this.launcherType()) {
+				case OFFICIAL:
+					this.generateProfileCheckBox.setVisible(true);
+					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
+					this.installButton.setText(Localization.get("gui.install"));
+					break;
+				case MULTIMC:
+					this.generateProfileCheckBox.setVisible(false);
+					this.installButton.setText(Localization.get("gui.install.mmc"));
+					this.installLocation.setText(System.getProperty("user.dir"));
+					break;
+				default:
+					throw new RuntimeException("don't know what to do with launcher type " + item);
+				}
+			});
+		}
 	}
 
 
 
 	private void install(ActionEvent event) {
-		String selectedType = (String) this.loaderTypeSelector.getSelectedItem();
-		LoaderType loaderType = LoaderType.of(selectedType);
+		LauncherType launcherType = this.launcherType();
+		LoaderType loaderType = this.loaderType();
 
 		Action<InstallClient.MessageType> action = Action.installClient(
 				(String) this.minecraftVersionSelector.getSelectedItem(),
+				launcherType,
 				loaderType,
 				(String) this.loaderVersionSelector.getSelectedItem(),
 				this.installLocation.getText(),
@@ -190,12 +224,25 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 		action.run(this);
 
-		showInstalledMessage(loaderType);
+		if (launcherType == LauncherType.MULTIMC) {
+			showMmcPackGenerationMessage(loaderType);
+		} else {
+			showInstalledMessage(loaderType);
+		}
+	}
+
+	private static void showMmcPackGenerationMessage(LoaderType type){
+		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getLocalizedName()),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	LauncherType launcherType() {
+		return ((LauncherLabel) this.launcherTypeSelector.getSelectedItem()).type;
 	}
 
 	@Override
 	LoaderType loaderType() {
-		return LoaderType.of(((String) this.loaderTypeSelector.getSelectedItem()));
+		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
 	@Override
@@ -213,5 +260,21 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 	@Override
 	public void accept(InstallClient.MessageType messageType) {
+	}
+
+	class LauncherLabel extends JLabel {
+
+		public final LauncherType type;
+
+		public LauncherLabel(LauncherType type) {
+			super(type.getLocalizedName());
+			this.type = type;
+		}
+
+		// needed for it to render correctly
+		@Override
+		public String toString() {
+			return this.getText();
+		}
 	}
 }
