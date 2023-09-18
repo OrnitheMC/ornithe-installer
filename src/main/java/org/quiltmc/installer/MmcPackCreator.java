@@ -26,10 +26,14 @@ import java.util.zip.ZipOutputStream;
 
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
+import com.vdurmont.semver4j.*;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=\"env __GL_THREADED_OPTIMIZATIONS=0\"";
 	private static final boolean IS_LINUX_LIKE_OS;
+	private static final Semver VERSION_1_6 = new Semver("1.6.0-pre+06251516");
+	private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
+
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
 		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
 			try {
@@ -112,10 +116,11 @@ public class MmcPackCreator {
 		return null;
 	}
 
-	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion){
+	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion, String intermediaryVersion){
 		String lwjglMajorVer = lwjglVersion.substring(0,1);
 		return examplePackJson
 				.replaceAll("\\$\\{mc_version}", gameVersion)
+				.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
 				.replaceAll("\\$\\{loader_version}", loaderVersion)
 				.replaceAll("\\$\\{loader_name}", type.getLocalizedName() + " Loader")
 				.replaceAll("\\$\\{loader_uid}", type.getMavenUid())
@@ -131,12 +136,31 @@ public class MmcPackCreator {
 		String instanceCfgPath = "instance.cfg";
 		String iconPath = "ornithe.png";
 
+		String noAppletTrait = ""; // this is left empty and only filled in if the version is correct
+		String intermediaryVersion = gameVersion;
+
+		VersionManifest.VersionDetails details = manifest.getVersion(gameVersion).details();
+		String normalizedVersion = details.normalizedVersion();
+
+		Semver semver = new Semver(normalizedVersion);
+		if(semver.isLowerThan(VERSION_1_6)){
+			if(semver.isLowerThan(VERSION_1_3)){
+				intermediaryVersion+= "-client";
+			}
+			noAppletTrait = " \"+traits\": [\n" +
+					"    \t\"noapplet\"\n" +
+					"    ],";
+		}
+
 		try {
 			String transformedPackJson = transformPackJson(
-					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, findLwjglVersion(manifest, gameVersion)
+					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, findLwjglVersion(manifest, gameVersion), intermediaryVersion
 			);
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
-					.replaceAll("\\$\\{mc_version}", gameVersion);
+					.replaceAll("\\$\\{mc_version}", gameVersion)
+					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
+					.replaceAll("\\$\\{noapplet}", noAppletTrait);
+
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 

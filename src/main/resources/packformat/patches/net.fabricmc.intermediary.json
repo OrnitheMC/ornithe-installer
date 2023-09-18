@@ -2,10 +2,11 @@
     "formatVersion": 1,
     "libraries": [
         {
-            "name": "net.ornithemc:calamus-intermediary:${mc_version}",
+            "name": "net.ornithemc:calamus-intermediary:${intermediary_ver}",
             "url": "https://maven.ornithemc.net/releases"
         }
     ],
+    ${noapplet}
     "name": "Intermediary Mappings",
     "requires": [
         {
@@ -15,5 +16,5 @@
     ],
     "type": "release",
     "uid": "net.fabricmc.intermediary",
-    "version": "${mc_version}"
+    "version": "${intermediary_ver}"
 }
