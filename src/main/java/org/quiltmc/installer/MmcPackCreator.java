@@ -136,17 +136,15 @@ public class MmcPackCreator {
 		String instanceCfgPath = "instance.cfg";
 		String iconPath = "ornithe.png";
 
-		String noAppletTrait = ""; // this is left empty and only filled in if the version is correct
-		String intermediaryVersion = gameVersion;
-
-		VersionManifest.VersionDetails details = manifest.getVersion(gameVersion).details();
+		VersionManifest.Version version = manifest.getVersion(gameVersion);
+		VersionManifest.VersionDetails details = version.details();
 		String normalizedVersion = details.normalizedVersion();
-
 		Semver semver = new Semver(normalizedVersion);
+
+		String intermediaryVersion = version.id(GameSide.CLIENT);
+		String noAppletTrait = ""; // this is left empty and only filled in if the version is correct
+
 		if(semver.isLowerThan(VERSION_1_6)){
-			if(semver.isLowerThan(VERSION_1_3)){
-				intermediaryVersion+= "-client";
-			}
 			noAppletTrait = " \"+traits\": [\n" +
 					"    \t\"noapplet\"\n" +
 					"    ],";
