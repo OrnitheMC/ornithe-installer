@@ -6,7 +6,6 @@
             "url": "https://maven.ornithemc.net/releases"
         }
     ],
-    ${noapplet}
     "name": "Intermediary Mappings",
     "requires": [
         {

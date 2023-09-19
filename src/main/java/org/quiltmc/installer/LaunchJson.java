@@ -27,12 +27,85 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class LaunchJson {
+
+	@SuppressWarnings("unchecked")
+	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion){
+		return LaunchJson.get(gameVersion).thenApply(
+				vanilaJson ->  {
+					try {
+						Map<String, Object> vanilaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanilaJson));
+						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanilaMap.get("libraries");
+
+						vanillaLibraries.removeIf(lib -> {
+							String name = lib.get("name");
+							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
+						});
+
+						vanilaMap.put("libraries", vanillaLibraries);
+
+						String clientName = "com.mojang:minecraft:" + gameVersion.id() + "client";
+						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanilaMap.get("downloads");
+						Map<String, String> client = downloads.get("client");
+
+						Map<String, Object> mainJar = Map.of(
+								"downloads", Map.of("artifact",client),
+								"name",clientName
+						);
+						vanilaMap.put("mainJar", mainJar);
+
+						vanilaMap.put("uid", "net.minecraft");
+						vanilaMap.put("version", gameVersion.id());
+						vanilaMap.put("compatibleJavaMajors", List.of(8)); // not all versions have this defined in manifests and even betas use 8
+
+						vanilaMap.remove("downloads");
+						vanilaMap.remove("javaVersion");
+						vanilaMap.remove("id");
+						vanilaMap.remove("time");
+
+						if (((String) vanilaMap.get("mainClass")).contains("launchwrapper")) {
+							vanilaMap.put("+traits", List.of("texturepacks"));
+						}
+						vanilaMap.put("requires",List.of(
+								Map.of(
+										"suggests", "${lwjgl_version}",
+										"uid", "${lwjgl_uid}"
+								)
+						));
+
+						if (vanilaMap.containsKey("arguments")) {
+							Map<String, Object> arguments =  ((Map<String, Object>) vanilaMap.get("arguments"));//.get("game");
+
+							if(!arguments.isEmpty()){
+								List<Object> gameArguments = (List<Object>) arguments.get("game");
+
+								if (!arguments.isEmpty()) {
+									String combinedCombination = "";
+									for (Object gameArgument : gameArguments) { // custom res and demo args are not needed with mmc
+										if (gameArgument instanceof String) {
+											combinedCombination += gameArgument + " ";
+										}
+									}
+									vanilaMap.put("minecraftArguements", combinedCombination.trim());
+								}
+							}
+
+						}
+
+						StringWriter writer = new StringWriter();
+						Gsons.write(JsonWriter.json(writer), vanilaMap);
+
+						return writer.toString();
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+		);
+	}
+
 	/**
 	 * @return the launch json for a vanilla mc instance
 	 */
@@ -127,11 +200,11 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
-			if (type == LoaderType.QUILT) {
+			/*if (type == LoaderType.QUILT) {
 				@SuppressWarnings("unchecked")
 				Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
 				arguments.computeIfAbsent("jvm", (key) -> new ArrayList<>()).add("-Dloader.disable_beacon=true");
-			}
+			}*/ // Quilt Removed The Beacon.
 
 
 			// TODO: HACK HACK HACK: inject intermediary instead of hashed

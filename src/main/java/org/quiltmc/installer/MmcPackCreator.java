@@ -16,6 +16,9 @@
 
 package org.quiltmc.installer;
 
+import org.quiltmc.parsers.json.JsonReader;
+import org.quiltmc.parsers.json.JsonToken;
+
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -24,15 +27,11 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.quiltmc.parsers.json.JsonReader;
-import org.quiltmc.parsers.json.JsonToken;
-import com.vdurmont.semver4j.*;
-
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=\"env __GL_THREADED_OPTIMIZATIONS=0\"";
 	private static final boolean IS_LINUX_LIKE_OS;
-	private static final Semver VERSION_1_6 = new Semver("1.6.0-pre+06251516");
-	private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
+	//private static final Semver VERSION_1_6 = new Semver("1.6.0-pre+06251516");
+	//private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
 
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
 		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
@@ -129,38 +128,41 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
+	private static String transformMinecraftJson(String minecraftPatchString, String lwjglVersion) {
+		String lwjglMajorVer = lwjglVersion.substring(0,1);
+		return minecraftPatchString
+				.replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
+				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
+	}
+
 	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, VersionManifest manifest){
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
 		String instanceCfgPath = "instance.cfg";
 		String iconPath = "ornithe.png";
+		String minecraftPatchPath = "patches/net.minecraft.json";
 
 		VersionManifest.Version version = manifest.getVersion(gameVersion);
-		VersionManifest.VersionDetails details = version.details();
-		String normalizedVersion = details.normalizedVersion();
-		Semver semver = new Semver(normalizedVersion);
-
 		String intermediaryVersion = version.id(GameSide.CLIENT);
-		String noAppletTrait = ""; // this is left empty and only filled in if the version is correct
-
-		if(semver.isLowerThan(VERSION_1_6)){
-			noAppletTrait = " \"+traits\": [\n" +
-					"    \t\"noapplet\"\n" +
-					"    ],";
-		}
 
 		try {
+			String lwjglVersion = findLwjglVersion(manifest, gameVersion);
+
 			String transformedPackJson = transformPackJson(
-					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, findLwjglVersion(manifest, gameVersion), intermediaryVersion
+					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, lwjglVersion, intermediaryVersion
 			);
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion)
-					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
-					.replaceAll("\\$\\{noapplet}", noAppletTrait);
+					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion);
+					//.replaceAll("\\$\\{noapplet}", noAppletTrait);
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
+
+			String transformedMinecraftJson = transformMinecraftJson(
+					LaunchJson.getMmcJson(version).join(), lwjglVersion
+			);
 
 			if(IS_LINUX_LIKE_OS){
 				transformedInstanceCfg+= "\n" +"OverrideCommands=true" +"\n" + ENV_WRAPPER_COMMAND;
@@ -178,6 +180,7 @@ public class MmcPackCreator {
 			writeJsonToZip(zipOut, instanceCfgPath, transformedInstanceCfg);
 			writeJsonToZip(zipOut, intermediaryJsonPath, transformedIntermediaryJson);
 			writeJsonToZip(zipOut, packJsonPath, transformedPackJson);
+			writeJsonToZip(zipOut, minecraftPatchPath, transformedMinecraftJson);
 
 			zipOut.close();
 			fileOut.close();

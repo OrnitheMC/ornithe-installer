@@ -30,7 +30,6 @@ repositories {
 
 dependencies {
 	implementation("org.quiltmc.parsers:json:0.2.1")
-	implementation("com.vdurmont:semver4j:3.1.0")
 	compileOnly("org.jetbrains:annotations:20.1.0")
 }
 
@@ -72,7 +71,6 @@ tasks.jar {
 
 tasks.shadowJar {
 	relocate("org.quiltmc.parsers.json", "org.quiltmc.installer.lib.parsers.json")
-	relocate("com.vdurmont:semver4j","org.quiltmc.installer.lib.test.semvar")
 	minimize()
 
 	// Compiler does not know which set method we are targeting with null value
