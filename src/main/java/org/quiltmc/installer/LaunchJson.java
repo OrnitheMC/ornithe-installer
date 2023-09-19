@@ -89,7 +89,7 @@ public final class LaunchJson {
 											combinedCombination += gameArgument + " ";
 										}
 									}
-									vanilaMap.put("minecraftArguements", combinedCombination.trim());
+									vanilaMap.put("minecraftArguments", combinedCombination.trim());
 								}
 							}
 
