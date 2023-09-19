@@ -35,9 +35,9 @@ public final class LaunchJson {
 	@SuppressWarnings("unchecked")
 	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion){
 		return LaunchJson.get(gameVersion).thenApply(
-				vanilaJson ->  {
+				vanillaJson ->  {
 					try {
-						Map<String, Object> vanilaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanilaJson));
+						Map<String, Object> vanilaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanilaMap.get("libraries");
 
 						vanillaLibraries.removeIf(lib -> {
@@ -47,7 +47,7 @@ public final class LaunchJson {
 
 						vanilaMap.put("libraries", vanillaLibraries);
 
-						String clientName = "com.mojang:minecraft:" + gameVersion.id() + "client";
+						String clientName = "com.mojang:minecraft:" + gameVersion.id() + ":client";
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanilaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
@@ -57,14 +57,19 @@ public final class LaunchJson {
 						);
 						vanilaMap.put("mainJar", mainJar);
 
+						vanilaMap.put("name", "Minecraft");
 						vanilaMap.put("uid", "net.minecraft");
 						vanilaMap.put("version", gameVersion.id());
 						vanilaMap.put("compatibleJavaMajors", List.of(8)); // not all versions have this defined in manifests and even betas use 8
+						vanilaMap.put("format", 1);
 
 						vanilaMap.remove("downloads");
 						vanilaMap.remove("javaVersion");
 						vanilaMap.remove("id");
 						vanilaMap.remove("time");
+						vanilaMap.remove("logging");
+						vanilaMap.remove("minimumLauncherVersion");
+						vanilaMap.remove("complianceLevel");
 
 						if (((String) vanilaMap.get("mainClass")).contains("launchwrapper")) {
 							vanilaMap.put("+traits", List.of("texturepacks"));
@@ -90,9 +95,12 @@ public final class LaunchJson {
 										}
 									}
 									vanilaMap.put("minecraftArguments", combinedCombination.trim());
+									// TODO this is bit of a hack? ideally should derive this from the jvm args list of the arguments object,
+									//  but every version that has a game arguments list has this trait so unless manifests change this works
+									vanilaMap.put("+traits", List.of("FirstThreadOnMacOS"));
 								}
 							}
-
+							vanilaMap.remove("arguments");
 						}
 
 						StringWriter writer = new StringWriter();
