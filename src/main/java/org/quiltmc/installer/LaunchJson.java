@@ -38,14 +38,6 @@ public final class LaunchJson {
 				vanillaJson ->  {
 					try {
 						Map<String, Object> vanilaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
-						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanilaMap.get("libraries");
-
-						vanillaLibraries.removeIf(lib -> {
-							String name = lib.get("name");
-							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
-						});
-
-						vanilaMap.put("libraries", vanillaLibraries);
 
 						String clientName = "com.mojang:minecraft:" + gameVersion.id() + ":client";
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanilaMap.get("downloads");
@@ -55,32 +47,19 @@ public final class LaunchJson {
 								"downloads", Map.of("artifact",client),
 								"name",clientName
 						);
-						vanilaMap.put("mainJar", mainJar);
 
-						vanilaMap.put("name", "Minecraft");
-						vanilaMap.put("uid", "net.minecraft");
-						vanilaMap.put("version", gameVersion.id());
-						vanilaMap.put("compatibleJavaMajors", List.of(8)); // not all versions have this defined in manifests and even betas use 8
-						vanilaMap.put("format", 1);
+						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanilaMap.get("libraries");
+						vanillaLibraries.removeIf(lib -> {
+							String name = lib.get("name");
+							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
+						});
 
-						vanilaMap.remove("downloads");
-						vanilaMap.remove("javaVersion");
-						vanilaMap.remove("id");
-						vanilaMap.remove("time");
-						vanilaMap.remove("logging");
-						vanilaMap.remove("minimumLauncherVersion");
-						vanilaMap.remove("complianceLevel");
-
+						List<String> traits = new ArrayList<>();
 						if (((String) vanilaMap.get("mainClass")).contains("launchwrapper")) {
-							vanilaMap.put("+traits", List.of("texturepacks"));
+							traits.add("texturepacks");
 						}
-						vanilaMap.put("requires",List.of(
-								Map.of(
-										"suggests", "${lwjgl_version}",
-										"uid", "${lwjgl_uid}"
-								)
-						));
 
+						String minecraftArguments = (String) vanilaMap.getOrDefault("minecraftArguments", "");
 						if (vanilaMap.containsKey("arguments")) {
 							Map<String, Object> arguments =  ((Map<String, Object>) vanilaMap.get("arguments"));//.get("game");
 
@@ -94,17 +73,21 @@ public final class LaunchJson {
 											combinedCombination += gameArgument + " ";
 										}
 									}
-									vanilaMap.put("minecraftArguments", combinedCombination.trim());
+									minecraftArguments = combinedCombination.trim();
 									// TODO this is bit of a hack? ideally should derive this from the jvm args list of the arguments object,
 									//  but every version that has a game arguments list has this trait so unless manifests change this works
-									vanilaMap.put("+traits", List.of("FirstThreadOnMacOS"));
+									traits.add("FirstThreadOnMacOS");
 								}
 							}
-							vanilaMap.remove("arguments");
 						}
 
 						StringWriter writer = new StringWriter();
-						Gsons.write(JsonWriter.json(writer), vanilaMap);
+						Gsons.write(
+								JsonWriter.json(writer),
+								buildPackJsonMap(
+										vanilaMap, vanillaLibraries, minecraftArguments, traits, mainJar, gameVersion.id()
+								)
+						);
 
 						return writer.toString();
 					} catch (IOException e) {
@@ -112,6 +95,43 @@ public final class LaunchJson {
 					}
 				}
 		);
+	}
+
+
+	private static Map<String, Object> buildPackJsonMap(
+			Map<String, Object> vanilaMap,
+			List<Map<String, String>> modifiedLibraries,
+			String minecraftArguments,
+			List<String> traits,
+			Map<String, Object> mainJar,
+			String gameVersion
+	){
+		Map<String, Object> moddedJsonMap = new LinkedHashMap<>();
+
+		if(!traits.isEmpty()){
+			moddedJsonMap.put("+traits",traits);
+		}
+
+		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
+		moddedJsonMap.put("compatibleJavaMajors", List.of(8));
+		moddedJsonMap.put("formatVersion", 1);
+		moddedJsonMap.put("libraries", modifiedLibraries);
+		moddedJsonMap.put("mainClass", vanilaMap.get("mainClass"));
+		moddedJsonMap.put("mainJar", mainJar);
+		moddedJsonMap.put("minecraftArguments", minecraftArguments);
+		moddedJsonMap.put("name", "Minecraft");
+		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
+		moddedJsonMap.put("requires",List.of(
+				Map.of(
+						"suggests", "${lwjgl_version}",
+						"uid", "${lwjgl_uid}"
+				)
+		));
+		moddedJsonMap.put("type", vanilaMap.get("type"));
+		moddedJsonMap.put("uid", "net.minecraft");
+		moddedJsonMap.put("version", gameVersion);
+
+		return moddedJsonMap;
 	}
 
 	/**
