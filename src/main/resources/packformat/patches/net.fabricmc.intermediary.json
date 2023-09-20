@@ -2,7 +2,7 @@
     "formatVersion": 1,
     "libraries": [
         {
-            "name": "net.ornithemc:calamus-intermediary:${intermediary_ver}",
+            "name": "${intermediary_maven}",
             "url": "https://maven.ornithemc.net/releases"
         }
     ],
