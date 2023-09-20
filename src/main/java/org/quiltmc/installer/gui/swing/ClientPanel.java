@@ -19,7 +19,6 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -46,7 +45,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
-	private JComponent telemetryCheckBox;
+	//private JComponent telemetryCheckBox;
 	private JCheckBox generateProfileCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
@@ -128,9 +127,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
-				if (telemetryCheckBox != null) {
-					telemetryCheckBox.setVisible(this.loaderType() == LoaderType.QUILT);
-				}
 			});
 		}
 
@@ -167,13 +163,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 			this.generateProfileCheckBox = generateProfileBox;
-
-
-			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
-			row5.add(optOutBox);
-			optOutBox.setEnabled(false);
-			optOutBox.setVisible(false);
-			this.telemetryCheckBox = optOutBox;
 		}
 
 		// Install button
@@ -210,14 +199,18 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 
 	private void install(ActionEvent event) {
+		String minecraftVersion = (String) this.minecraftVersionSelector.getSelectedItem();
+		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
+		VersionManifest.Version version = this.manifest().getVersion(minecraftVersion);
 
 		Action<InstallClient.MessageType> action = Action.installClient(
-				(String) this.minecraftVersionSelector.getSelectedItem(),
+				minecraftVersion,
 				launcherType,
 				loaderType,
-				(String) this.loaderVersionSelector.getSelectedItem(),
+				loaderVersion,
+				this.intermediaryVersions().get(version.id(GameSide.CLIENT)),
 				this.installLocation.getText(),
 				this.generateProfile
 		);
@@ -246,7 +239,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	}
 
 	@Override
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
 		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);

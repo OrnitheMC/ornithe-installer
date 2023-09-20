@@ -241,6 +241,7 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		List<String> manifests = null;
 		Boolean sharedMappings = null;
+		String normalizedVersion = null;
 
 		reader.beginObject();
 
@@ -262,6 +263,13 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 				sharedMappings = reader.nextBoolean();
 				break;
+			case "normalizedVersion":
+				if(reader.peek() != JsonToken.STRING) {
+					throw new ParseException("normalizedVersion must be a string", reader);
+				}
+
+				normalizedVersion = reader.nextString();
+				break;
 			default:
 				reader.skipValue();
 			}
@@ -271,8 +279,9 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 		if (manifests == null) throw new ParseException("manifests is required", reader);
 		if (sharedMappings == null) throw new ParseException("sharedMappings is required", reader);
+		if (normalizedVersion == null) throw new ParseException("normalizedVersion is required", reader);
 
-		return new VersionDetails(version, manifests, sharedMappings);
+		return new VersionDetails(version, normalizedVersion, manifests, sharedMappings);
 	}
 
 	private static List<String> readManifests(Version version, JsonReader reader) throws IOException, ParseException {
@@ -411,17 +420,23 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 
 	public static final class VersionDetails {
 		private final Version version;
+		private final String normalizedVersion;
 		private final List<String> manifests;
 		private final boolean sharedMappings;
 
-		VersionDetails(Version version, List<String> manifests, boolean sharedMappings) {
+		VersionDetails(Version version, String normalizedVersion, List<String> manifests, boolean sharedMappings) {
 			this.version = version;
+			this.normalizedVersion = normalizedVersion;
 			this.manifests = manifests;
 			this.sharedMappings = sharedMappings;
 		}
 
 		public Version version() {
 			return this.version;
+		}
+
+		public String normalizedVersion() {
+			return normalizedVersion;
 		}
 
 		public List<String> manifests() {

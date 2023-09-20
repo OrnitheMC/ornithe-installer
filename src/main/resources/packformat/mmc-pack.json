@@ -29,7 +29,7 @@
                     "uid": "net.minecraft"
                 }
             ],
-            "cachedVersion": "${mc_version}",
+            "cachedVersion": "${intermediary_ver}",
             "dependencyOnly": true,
             "uid": "net.fabricmc.intermediary",
             "version": "${mc_version}"

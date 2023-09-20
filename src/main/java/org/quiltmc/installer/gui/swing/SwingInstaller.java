@@ -82,7 +82,7 @@ public final class SwingInstaller extends JFrame {
 						return !(v.startsWith("0.16.0-beta.") && v.length() == 13 && v.charAt(12) != '9');
 					}).collect(Collectors.toList()));
 				}
-				Collection<String> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).keySet();
+				Map<String, String> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
 
 				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 				this.serverPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
