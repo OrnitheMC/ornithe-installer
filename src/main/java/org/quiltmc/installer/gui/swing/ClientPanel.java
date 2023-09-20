@@ -46,7 +46,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JCheckBox showLoaderBetasCheckBox;
 	private final JTextField installLocation;
 	private final JButton selectInstallationLocation;
-	private JComponent telemetryCheckBox;
+	//private JComponent telemetryCheckBox;
 	private JCheckBox generateProfileCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
@@ -128,9 +128,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				if (this.loaderVersions() != null) {
 					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
-				if (telemetryCheckBox != null) {
-					telemetryCheckBox.setVisible(this.loaderType() == LoaderType.QUILT);
-				}
 			});
 		}
 
@@ -167,13 +164,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 			this.generateProfileCheckBox = generateProfileBox;
-
-
-			JCheckBox optOutBox = new JCheckBox(Localization.get("gui.beacon-opt-out"), null, true);
-			row5.add(optOutBox);
-			optOutBox.setEnabled(false);
-			optOutBox.setVisible(false);
-			this.telemetryCheckBox = optOutBox;
 		}
 
 		// Install button
