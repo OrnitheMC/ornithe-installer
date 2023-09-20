@@ -2,7 +2,7 @@
     "formatVersion": 1,
     "libraries": [
         {
-            "name": "${intermediary_maven}",
+            "name": "${intermediary_maven}:${intermediary_ver}",
             "url": "https://maven.ornithemc.net/releases"
         }
     ],
