@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +53,7 @@ abstract class AbstractPanel extends JPanel {
 	@Nullable
 	private Map<LoaderType, List<String>> loaderVersions;
 	@Nullable
-	private Collection<String> intermediaryVersions;
+	private Map<String, String> intermediaryVersions;
 	protected boolean beaconOptOut = false;
 
 	AbstractPanel(SwingInstaller gui) {
@@ -69,7 +68,7 @@ abstract class AbstractPanel extends JPanel {
 		return rowPanel;
 	}
 
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
 		this.manifest = manifest;
 		this.loaderVersions = loaderVersions;
 		this.intermediaryVersions = intermediaryVersions;
@@ -91,13 +90,13 @@ abstract class AbstractPanel extends JPanel {
 	}
 
 	@Nullable
-	public Collection<String> intermediaryVersions() {
+	public Map<String, String> intermediaryVersions() {
 		return this.intermediaryVersions;
 	}
 
 	abstract LoaderType loaderType();
 
-	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Collection<String> intermediaryVersions, boolean snapshots) {
+	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Map<String, String> intermediaryVersions, boolean snapshots) {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
@@ -108,7 +107,7 @@ abstract class AbstractPanel extends JPanel {
 				|| (version.type().equals("old_alpha") && snapshots)
 				|| (version.type().equals("alpha_server") && snapshots)
 				|| (version.type().equals("classic_server") && snapshots)) {
-				if (intermediaryVersions.contains(version.id(side))) {
+				if (intermediaryVersions.containsKey(version.id(side))) {
 					comboBox.addItem(version.id());
 				}
 			}

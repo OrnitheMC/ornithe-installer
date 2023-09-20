@@ -23,10 +23,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -118,51 +115,6 @@ public class MmcPackCreator {
 		return null;
 	}
 
-	private static Map<String, Object> getIntermediaryInfo(String gameVersion){
-		String rawUrl = OrnitheMeta.ORNITHE_META_URL + "/v3/versions/intermediary/" + gameVersion;
-
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-				URL url = new URL(rawUrl);
-				URLConnection connection = Connections.openConnection(url);
-
-				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
-
-				try (BufferedReader reader = new BufferedReader(stream)) {
-					StringBuilder builder = new StringBuilder();
-					String line;
-
-					while ((line = reader.readLine()) != null) {
-						builder.append(line);
-						builder.append('\n');
-					}
-
-					return builder.toString();
-				}
-			} catch (IOException e) {
-				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
-			}
-		}).thenApplyAsync(raw -> {
-			try {
-				//noinspection unchecked
-				List<Object> list = (List<Object>) Gsons.read(JsonReader.json(raw));
-				if (list == null || list.isEmpty()) {
-					throw new IOException("Invalid meta response");
-				}
-
-				Map<String, Object> map = (Map<String, Object>) list.get(0);
-
-				if(map.containsKey("maven") && map.containsKey("version")){
-					return map;
-				}else {
-					return null;
-				}
-			} catch (IOException e) {
-				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
-			}
-		}).join();
-	}
-
 	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion, String intermediaryVersion){
 		String lwjglMajorVer = lwjglVersion.substring(0,1);
 		return examplePackJson
@@ -183,7 +135,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, VersionManifest manifest){
+	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest){
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
@@ -192,9 +144,9 @@ public class MmcPackCreator {
 		String minecraftPatchPath = "patches/net.minecraft.json";
 
 		VersionManifest.Version version = manifest.getVersion(gameVersion);
-		Map<String, Object> intermediaryInfo = getIntermediaryInfo(version.id(GameSide.CLIENT));
-		String intermediaryVersion = (String) intermediaryInfo.get("version");
-		String intermediaryMaven = (String) intermediaryInfo.get("maven");
+		String[] intermediaryParts = intermediaryInfo.split("[:]");
+		String intermediaryMaven = intermediaryParts[0] + ":" + intermediaryParts[1];
+		String intermediaryVersion = intermediaryParts[2];
 
 		try {
 			String lwjglVersion = findLwjglVersion(manifest, gameVersion);

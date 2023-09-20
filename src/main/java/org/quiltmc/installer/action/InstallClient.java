@@ -48,15 +48,17 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
+	private final String intermediary;
 	private final String installDir;
 	private final boolean generateProfile;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean generateProfile) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, String installDir, boolean generateProfile) {
 		this.minecraftVersion = minecraftVersion;
 		this.launcherType = launcherType;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
+		this.intermediary = intermediary;
 		this.installDir = installDir;
 		this.generateProfile = generateProfile;
 	}
@@ -212,6 +214,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 					this.minecraftVersion,
 					this.loaderType,
 					this.loaderVersion,
+					this.intermediary,
 					installationInfo.manifest()
 			);
 		}).exceptionally(e -> {

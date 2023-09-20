@@ -55,7 +55,6 @@ public final class OrnitheMeta {
 	 *
 	 * <p>The returned map has the version as the key and the maven artifact as the value
 	 */
-	// TODO: use
 	public static final Endpoint<Map<String, String>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v3/versions/intermediary", reader -> {
 		Map<String, String> ret = new LinkedHashMap<>();
 

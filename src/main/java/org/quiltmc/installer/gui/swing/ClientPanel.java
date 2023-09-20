@@ -19,7 +19,6 @@ package org.quiltmc.installer.gui.swing;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -200,14 +199,17 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 
 	private void install(ActionEvent event) {
+		String minecraftVersion = (String) this.minecraftVersionSelector.getSelectedItem();
+		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
 
 		Action<InstallClient.MessageType> action = Action.installClient(
-				(String) this.minecraftVersionSelector.getSelectedItem(),
+				minecraftVersion,
 				launcherType,
 				loaderType,
-				(String) this.loaderVersionSelector.getSelectedItem(),
+				loaderVersion,
+				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateProfile
 		);
@@ -236,7 +238,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	}
 
 	@Override
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
 		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);

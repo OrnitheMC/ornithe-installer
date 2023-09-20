@@ -20,7 +20,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.nio.file.*;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -178,7 +177,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 	}
 
 	@Override
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Collection<String> intermediaryVersions) {
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
 		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 
 		populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
