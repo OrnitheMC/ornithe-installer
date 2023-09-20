@@ -203,13 +203,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
+		VersionManifest.Version version = this.manifest().getVersion(minecraftVersion);
 
 		Action<InstallClient.MessageType> action = Action.installClient(
 				minecraftVersion,
 				launcherType,
 				loaderType,
 				loaderVersion,
-				this.intermediaryVersions().get(minecraftVersion),
+				this.intermediaryVersions().get(version.id(GameSide.CLIENT)),
 				this.installLocation.getText(),
 				this.generateProfile
 		);

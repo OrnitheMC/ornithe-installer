@@ -147,7 +147,7 @@ public final class CliInstaller {
 					return Action.DISPLAY_HELP;
 				}
 
-				String intermediary = fetchIntermediary(minecraftVersion);
+				String intermediary = fetchIntermediary(GameSide.CLIENT, minecraftVersion);
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
@@ -332,9 +332,11 @@ public final class CliInstaller {
 		}
 	}
 
-	private static String fetchIntermediary(String minecraftVersion) {
+	private static String fetchIntermediary(GameSide side, String minecraftVersion) {
 		return OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Set.of(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT)).thenApply(meta -> {
-			return meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).get(minecraftVersion);
+			VersionManifest manifest = VersionManifest.create().join();
+			VersionManifest.Version version = manifest.getVersion(minecraftVersion);
+			return meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).get(version.id(side));
 		}).join();
 	}
 
