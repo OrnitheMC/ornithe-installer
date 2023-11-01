@@ -28,7 +28,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MmcPackCreator {
-	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=\"env __GL_THREADED_OPTIMIZATIONS=0\"";
+	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
 	private static final boolean IS_LINUX_LIKE_OS;
 	//private static final Semver VERSION_1_6 = new Semver("1.6.0-pre+06251516");
 	//private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
