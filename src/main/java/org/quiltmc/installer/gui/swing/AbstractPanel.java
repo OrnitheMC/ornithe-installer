@@ -205,7 +205,7 @@ abstract class AbstractPanel extends JPanel {
 	}
 
 	protected static void showInstalledMessage(LoaderType type) {
-		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getLocalizedName()),
+		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getLocalizedName(), "https://modrinth.com/mod/osl"),
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 

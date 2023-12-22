@@ -225,7 +225,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	}
 
 	private static void showMmcPackGenerationMessage(LoaderType type){
-		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getLocalizedName()),
+		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getLocalizedName(), "https://modrinth.com/mod/osl"),
 				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 	}
 
