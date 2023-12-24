@@ -19,6 +19,8 @@ package org.quiltmc.installer;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -186,6 +188,7 @@ public class MmcPackCreator {
 
 			zipOut.close();
 			fileOut.close();
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.getAbsolutePath()), null);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

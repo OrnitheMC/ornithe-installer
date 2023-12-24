@@ -28,6 +28,7 @@ server/
 # Debug artifacts
 run
 *.log
+*.zip
 
 # Windows
 *.db

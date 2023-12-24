@@ -47,10 +47,12 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	private final JButton selectInstallationLocation;
 	//private JComponent telemetryCheckBox;
 	private JCheckBox generateProfileCheckBox;
+	private JCheckBox copyProfilePathCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
 	private boolean generateProfile;
+	private boolean copyProfilePath;
 
 	ClientPanel(SwingInstaller gui) {
 		super(gui);
@@ -163,6 +165,10 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 			});
 			this.generateProfile = true;
 			this.generateProfileCheckBox = generateProfileBox;
+
+			row5.add(copyProfilePathCheckBox = new JCheckBox(Localization.get("gui.client.copy-profile-to-clipboard"), null, true)).setVisible(false);
+			copyProfilePathCheckBox.addItemListener(e -> this.copyProfilePath = e.getStateChange() == ItemEvent.SELECTED);
+			this.copyProfilePath = true;
 		}
 
 		// Install button
@@ -181,11 +187,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				switch (this.launcherType()) {
 				case OFFICIAL:
 					this.generateProfileCheckBox.setVisible(true);
+					this.copyProfilePathCheckBox.setVisible(false);
 					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 					this.installButton.setText(Localization.get("gui.install"));
 					break;
 				case MULTIMC:
 					this.generateProfileCheckBox.setVisible(false);
+					this.copyProfilePathCheckBox.setVisible(true);
 					this.installButton.setText(Localization.get("gui.install.mmc"));
 					this.installLocation.setText(System.getProperty("user.dir"));
 					break;
