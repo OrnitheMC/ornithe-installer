@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import javax.swing.JButton;
@@ -34,9 +35,9 @@ import javax.swing.JTextField;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.*;
 import org.quiltmc.installer.action.Action;
-import org.quiltmc.installer.action.InstallClient;
+import org.quiltmc.installer.action.InstallMessageType;
 
-final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.MessageType> {
+final class ClientPanel extends AbstractPanel implements Consumer<InstallMessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
 	private final JComboBox<LauncherLabel> launcherTypeSelector;
 	private final JComboBox<LoaderLabel> loaderTypeSelector;
@@ -213,7 +214,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 		LoaderType loaderType = this.loaderType();
 		VersionManifest.Version version = this.manifest().getVersion(minecraftVersion);
 
-		Action<InstallClient.MessageType> action = Action.installClient(
+		Action<InstallMessageType> action = Action.installClient(
 				minecraftVersion,
 				launcherType,
 				loaderType,
@@ -224,18 +225,29 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				this.copyProfilePath
 		);
 
-		action.run(this);
+		AtomicReference<InstallMessageType> result = new AtomicReference<>();
+		action.run(result::set);
 
 		if (launcherType == LauncherType.MULTIMC) {
-			showMmcPackGenerationMessage(loaderType);
+			showMmcPackGenerationMessage(loaderType, this.copyProfilePath, result.get());
 		} else {
-			showInstalledMessage(loaderType);
+			showInstalledMessage(loaderType, result.get());
 		}
 	}
 
-	private static void showMmcPackGenerationMessage(LoaderType type){
-		showPopup(Localization.get("dialog.install.mmc.successful"), Localization.createFrom("dialog.install.mmc.successful.description", type.getLocalizedName(), "https://modrinth.com/mod/osl"),
-				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+	private static void showMmcPackGenerationMessage(LoaderType type, boolean copyProfilePath, InstallMessageType msg) {
+		if (msg == InstallMessageType.SUCCEED) {
+			showPopup(
+					Localization.get("dialog.install.mmc.successful"),
+					Localization.createFrom("dialog.install.mmc.successful.description",
+							type.getLocalizedName(),
+							"https://modrinth.com/mod/osl",
+							copyProfilePath ? " " + Localization.get("dialog.install.mmc.copy-path") : ""
+					),
+					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+		} else if (msg == InstallMessageType.FAIL) {
+			showPopup(Localization.get("dialog.install.mmc.failed"), Localization.get("dialog.install.mmc.failed"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 
 	LauncherType launcherType() {
@@ -261,7 +273,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 	}
 
 	@Override
-	public void accept(InstallClient.MessageType messageType) {
+	public void accept(InstallMessageType messageType) {
 	}
 
 	class LauncherLabel extends JLabel {

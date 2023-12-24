@@ -23,6 +23,7 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import javax.swing.*;
@@ -34,10 +35,11 @@ import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
 import org.quiltmc.installer.action.Action;
+import org.quiltmc.installer.action.InstallMessageType;
 import org.quiltmc.installer.action.InstallServer;
 import org.quiltmc.parsers.json.JsonReader;
 
-final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.MessageType> {
+final class ServerPanel extends AbstractPanel implements Consumer<InstallMessageType> {
 	private final JComboBox<String> minecraftVersionSelector;
 	private final JComboBox<LoaderLabel> loaderTypeSelector;
 	private final JComboBox<String> loaderVersionSelector;
@@ -224,9 +226,9 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 				this.downloadServer
 		);
 
-		action.run(this);
-
-		showInstalledMessage(loaderType);
+		AtomicReference<InstallMessageType> result = new AtomicReference<>();
+		action.run(result::set);
+		showInstalledMessage(loaderType, result.get());
 	}
 
 	private void updateFlags() {
@@ -255,6 +257,6 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallServer.
 	}
 
 	@Override
-	public void accept(InstallServer.MessageType messageType) {
+	public void accept(InstallMessageType messageType) {
 	}
 }

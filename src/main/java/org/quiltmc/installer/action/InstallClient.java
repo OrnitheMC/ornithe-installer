@@ -42,7 +42,7 @@ import org.quiltmc.installer.MmcPackCreator;
 /**
  * An action which installs a new client instance.
  */
-public final class InstallClient extends Action<InstallClient.MessageType> {
+public final class InstallClient extends Action<InstallMessageType> {
 	private final String minecraftVersion;
 	private final LauncherType launcherType;
 	private final LoaderType loaderType;
@@ -66,20 +66,20 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 	}
 
 	@Override
-	public void run(Consumer<MessageType> statusTracker) {
+	public void run(Consumer<InstallMessageType> statusTracker) {
 		switch (this.launcherType) {
 		case OFFICIAL:
-			this.installOfficial();
+			this.installOfficial(statusTracker);
 			break;
 		case MULTIMC:
-			this.installMultimc();
+			this.installMultimc(statusTracker);
 			break;
 		default:
 			throw new RuntimeException("don't know how to install into " + this.launcherType);
 		}
 	}
 
-	private void installOfficial() {
+	private void installOfficial(Consumer<InstallMessageType> statusTracker) {
 		Path installDir;
 
 		if (this.installDir == null) {
@@ -161,7 +161,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 						throw new UncheckedIOException(e); // Handle via exceptionally
 					}
 				}
-
+				statusTracker.accept(InstallMessageType.SUCCEED);
 				println("Completed installation");
 			} catch (InterruptedException | ExecutionException e) {
 				// Should not happen since we allOf'd it.
@@ -171,7 +171,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		}))).exceptionally(e -> {
 			eprintln("Failed to install client");
 			e.printStackTrace();
-			System.exit(1);
+			statusTracker.accept(InstallMessageType.FAIL);
 			return null;
 		}).join();
 	}
@@ -207,7 +207,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		}
 	}
 
-	private void installMultimc() {
+	private void installMultimc(Consumer<InstallMessageType> statusTracker) {
 		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion);
 
 		installationInfoFuture.thenAccept(installationInfo -> {
@@ -220,14 +220,12 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 					installationInfo.manifest(),
 					this.copyProfilePath
 			);
+			statusTracker.accept(InstallMessageType.SUCCEED);
 		}).exceptionally(e -> {
 			eprintln("Failed to generate multimc pack");
 			e.printStackTrace();
-			System.exit(1);
+			statusTracker.accept(InstallMessageType.FAIL);
 			return null;
 		}).join();
-	}
-
-	public enum MessageType {
 	}
 }

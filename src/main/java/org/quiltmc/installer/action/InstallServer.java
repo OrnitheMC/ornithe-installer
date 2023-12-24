@@ -62,7 +62,7 @@ import org.quiltmc.parsers.json.JsonReader;
 /**
  * An action which creates the server launch jar and downloads the dedicated server.
  */
-public final class InstallServer extends Action<InstallServer.MessageType> {
+public final class InstallServer extends Action<InstallMessageType> {
 	public static final String SERVICES_DIR = "META-INF/services/";
 
 	private final String minecraftVersion;
@@ -85,7 +85,7 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 	}
 
 	@Override
-	public void run(Consumer<MessageType> statusTracker) {
+	public void run(Consumer<InstallMessageType> statusTracker) {
 		Path installDir;
 
 		if (this.installDir == null) {
@@ -209,15 +209,18 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 				// Download Minecraft server and create scripts if specified
 				if (this.installServer) {
 					println("Downloading server");
+					statusTracker.accept(InstallMessageType.SUCCEED);
 					return downloadServer(installDir, minecraftVersion, installationInfo);
 				}
 
+				statusTracker.accept(InstallMessageType.SUCCEED);
 				return CompletableFuture.completedFuture(null);
 			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
 			}
-		}).exceptionally(e -> {
+        }).exceptionally(e -> {
 			e.printStackTrace();
+			statusTracker.accept(InstallMessageType.FAIL);
 			return null;
 		}).join();
 	}
@@ -392,8 +395,5 @@ public final class InstallServer extends Action<InstallServer.MessageType> {
 
 	public Path installedDir() {
 		return this.installedDir;
-	}
-
-	public enum MessageType {
 	}
 }
