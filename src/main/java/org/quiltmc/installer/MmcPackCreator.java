@@ -25,9 +25,11 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
@@ -137,7 +139,8 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath){
+	public static void compileMmcZip(Path outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath){
+
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
@@ -172,25 +175,21 @@ public class MmcPackCreator {
 				transformedInstanceCfg+= "\n" +"OverrideCommands=true" +"\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			File zipFile = new File(outPutDir,"Ornithe-" + gameVersion + ".zip");
-			if (zipFile.exists()) {
-				zipFile.delete();
+			Path zipFile = outPutDir.resolve("Ornithe-" + gameVersion + ".zip");
+			Files.deleteIfExists(zipFile);
+
+			try (FileSystem fs = FileSystems.newFileSystem(zipFile)){
+				Files.copy(MmcPackCreator.class.getResourceAsStream(examplePackDir+"/"+iconPath), fs.getPath(iconPath));
+				Files.writeString(fs.getPath(instanceCfgPath), transformedInstanceCfg);
+				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
+				Files.writeString(fs.getPath(packJsonPath), transformedPackJson);
+				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
 			}
 
-			FileOutputStream fileOut = new FileOutputStream(zipFile);
-			ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-
-			copyResourceToZip(zipOut, examplePackDir, iconPath);
-			writeJsonToZip(zipOut, instanceCfgPath, transformedInstanceCfg);
-			writeJsonToZip(zipOut, intermediaryJsonPath, transformedIntermediaryJson);
-			writeJsonToZip(zipOut, packJsonPath, transformedPackJson);
-			writeJsonToZip(zipOut, minecraftPatchPath, transformedMinecraftJson);
-
-			zipOut.close();
-			fileOut.close();
 			if (copyProfilePath) {
-				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.getAbsolutePath()), null);
+				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.toString()), null);
 			}
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -204,23 +203,6 @@ public class MmcPackCreator {
 			os.write(buffer, 0, length);
 		}
 		return os.toString(StandardCharsets.UTF_8);
-	}
-
-	private static void copyResourceToZip(ZipOutputStream zipOut, String dir, String path) throws IOException {
-		InputStream resource = MmcPackCreator.class.getResourceAsStream(String.format("%s/%s", dir, path));
-		byte[] buffer = new byte[1024];
-		ZipEntry zipEntry = new ZipEntry(path);
-		zipOut.putNextEntry(zipEntry);
-		for (int length; (length = resource.read(buffer)) != -1; ) {
-			zipOut.write(buffer, 0, length);
-		}
-	}
-
-	private static void writeJsonToZip(ZipOutputStream zipOut, String path, String json) throws IOException {
-		byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-		ZipEntry zipEntry = new ZipEntry(path);
-		zipOut.putNextEntry(zipEntry);
-		zipOut.write(bytes);
 	}
 
 	static {

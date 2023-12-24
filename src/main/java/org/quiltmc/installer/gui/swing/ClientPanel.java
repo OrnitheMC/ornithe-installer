@@ -168,7 +168,6 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 
 			row5.add(copyProfilePathCheckBox = new JCheckBox(Localization.get("gui.client.copy-profile-to-clipboard"), null, true)).setVisible(false);
 			copyProfilePathCheckBox.addItemListener(e -> this.copyProfilePath = e.getStateChange() == ItemEvent.SELECTED);
-			this.copyProfilePath = true;
 		}
 
 		// Install button
