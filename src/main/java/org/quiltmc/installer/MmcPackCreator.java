@@ -137,7 +137,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest){
+	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath){
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
@@ -188,7 +188,9 @@ public class MmcPackCreator {
 
 			zipOut.close();
 			fileOut.close();
-			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.getAbsolutePath()), null);
+			if (copyProfilePath) {
+				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.getAbsolutePath()), null);
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

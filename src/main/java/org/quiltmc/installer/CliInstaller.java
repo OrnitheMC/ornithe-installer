@@ -151,7 +151,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediary, null, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediary, null, false, false);
 				}
 
 				// Try to parse loader version first

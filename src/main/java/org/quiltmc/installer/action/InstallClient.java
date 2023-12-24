@@ -51,9 +51,10 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 	private final String intermediary;
 	private final String installDir;
 	private final boolean generateProfile;
+	private final boolean copyProfilePath;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, String installDir, boolean generateProfile) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, String installDir, boolean generateProfile, boolean copyProfilePath) {
 		this.minecraftVersion = minecraftVersion;
 		this.launcherType = launcherType;
 		this.loaderType = loaderType;
@@ -61,6 +62,7 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 		this.intermediary = intermediary;
 		this.installDir = installDir;
 		this.generateProfile = generateProfile;
+		this.copyProfilePath = copyProfilePath;
 	}
 
 	@Override
@@ -215,7 +217,8 @@ public final class InstallClient extends Action<InstallClient.MessageType> {
 					this.loaderType,
 					this.loaderVersion,
 					this.intermediary,
-					installationInfo.manifest()
+					installationInfo.manifest(),
+					this.copyProfilePath
 			);
 		}).exceptionally(e -> {
 			eprintln("Failed to generate multimc pack");

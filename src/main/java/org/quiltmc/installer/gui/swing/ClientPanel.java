@@ -220,7 +220,8 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallClient.
 				loaderVersion,
 				this.intermediaryVersions().get(version.id(GameSide.CLIENT)),
 				this.installLocation.getText(),
-				this.generateProfile
+				this.generateProfile,
+				this.copyProfilePath
 		);
 
 		action.run(this);
