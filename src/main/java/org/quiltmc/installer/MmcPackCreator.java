@@ -170,14 +170,12 @@ public class MmcPackCreator {
 			Files.writeString(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
 					String.format(patch, name, url, libName, uid, version));
 			components.add(Map.of("cachedName", libName,"cachedVersion", version,"uid", uid));
-			System.out.println("added library: "+libName);
 		}
 
 
 
 		StringWriter writer = new StringWriter();
 		Gsons.write(JsonWriter.json(writer), pack);
-		System.out.println(writer);
 		return writer.toString();
 
 
