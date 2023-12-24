@@ -3,10 +3,12 @@ on: [workflow_dispatch] # Manual trigger
 jobs:
   buildJava:
     runs-on: ubuntu-20.04
-    container:
-      image: openjdk:17-jdk
-      options: --user root
     steps:
+      - name: setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "adopt"
+          java-version: 17
       - uses: actions/checkout@v1
       - uses: gradle/wrapper-validation-action@v1
       - run: ./gradlew build publish --stacktrace
@@ -38,7 +40,7 @@ jobs:
       - name: Run Cargo
         run: cargo build --release --target ${{ matrix.target }}-pc-windows-msvc
         working-directory: ./native
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Artifacts ${{ matrix.target }}
           path: target/${{ matrix.target }}-pc-windows-msvc/release/quilt-installer.exe
