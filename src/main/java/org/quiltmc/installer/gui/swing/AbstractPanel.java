@@ -17,20 +17,11 @@
 package org.quiltmc.installer.gui.swing;
 
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -45,6 +36,7 @@ import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
+import org.quiltmc.installer.action.InstallMessageType;
 
 abstract class AbstractPanel extends JPanel {
 	final SwingInstaller gui;
@@ -204,9 +196,14 @@ abstract class AbstractPanel extends JPanel {
 		return JOptionPane.showOptionDialog(null, pane, title, optionType, messageType, null, null, null) == 0;
 	}
 
-	protected static void showInstalledMessage(LoaderType type) {
-		showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getLocalizedName(), "https://modrinth.com/mod/osl"),
-				JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+	protected static void showInstalledMessage(LoaderType type, InstallMessageType msg) {
+		if (msg == InstallMessageType.SUCCEED) {
+			showPopup(Localization.get("dialog.install.successful"), Localization.createFrom("dialog.install.successful.description", type.getLocalizedName(), "https://modrinth.com/mod/osl"),
+					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+		} else if (msg == InstallMessageType.FAIL) {
+			showPopup(Localization.get("dialog.install.failed"), Localization.createFrom("dialog.install.failed.description", type.getLocalizedName()),
+					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+		}
 	}
 
 	private static String buildEditorPaneStyle() {
