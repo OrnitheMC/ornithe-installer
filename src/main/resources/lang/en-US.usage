@@ -31,6 +31,8 @@ where install options for only the client also include:
                   Causes the installer to not generate a new profile.
    --disable-beacon
                   Prevents you from counting towards the monthly user statistics
+   --copy-profile-path
+                  Copies the profile path to the clipboard if generating a MultiMC instance
 
 where install options for only the server also include:
 

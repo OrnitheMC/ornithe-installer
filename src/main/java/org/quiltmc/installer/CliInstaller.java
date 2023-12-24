@@ -166,7 +166,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, null, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, null, false, false);
 				}
 
 				// There are some additional options
@@ -187,6 +187,13 @@ public final class CliInstaller {
 						}
 
 						options.put("--no-profile", null);
+					} else if (option.equals("--copy-profile-path")) {
+						if (options.containsKey("--copy-profile-path")) {
+							System.err.println("Encountered duplicate option \"--copy-profile-path\", This shouldn't affect anything");
+						}
+
+						options.put("--copy-profile-path", null);
+
 					} else if (option.equals("--disable-beacon")) {
 						if (options.containsKey("--disable-beacon")) {
 							System.err.println("Encountered duplicate option \"--disable-beacon\", This shouldn't affect anything");
@@ -224,7 +231,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, options.get("--install-dir"), !options.containsKey("--no-profile"));
+				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
 			}
 			case "server": {
 				if (split.size() < 1) {
