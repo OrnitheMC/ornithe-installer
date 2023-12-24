@@ -212,7 +212,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 
 		installationInfoFuture.thenAccept(installationInfo -> {
 			MmcPackCreator.compileMmcZip(
-					Paths.get(this.installDir).toFile(),
+					Paths.get(this.installDir),
 					this.minecraftVersion,
 					this.loaderType,
 					this.loaderVersion,

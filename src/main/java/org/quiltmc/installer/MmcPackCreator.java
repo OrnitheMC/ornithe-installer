@@ -18,6 +18,7 @@ package org.quiltmc.installer;
 
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
+import org.quiltmc.parsers.json.JsonWriter;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
@@ -25,9 +26,11 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
@@ -65,50 +68,50 @@ public class MmcPackCreator {
 
 		while (reader.hasNext()) {
 			switch (reader.nextName()) {
-			case "libraries":
-				if (reader.peek() != JsonToken.BEGIN_ARRAY) {
-					throw new ParseException("libraries must be an array", reader);
-				}
-
-				reader.beginArray();
-
-				while (reader.hasNext()) {
-					if (reader.peek() != JsonToken.BEGIN_OBJECT) {
-						throw new ParseException("library entries must all be objects", reader);
+				case "libraries":
+					if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+						throw new ParseException("libraries must be an array", reader);
 					}
 
-					reader.beginObject();
+					reader.beginArray();
 
 					while (reader.hasNext()) {
-						switch (reader.nextName()) {
-						case "name":
-							if (reader.peek() != JsonToken.STRING) {
-								throw new ParseException("library name must be a string", reader);
-							}
-
-							String name = reader.nextString();
-							String[] maven = name.split("[:]");
-							String artifact = maven[1];
-							String version = maven[2];
-
-							if (artifact.equals("lwjgl")) {
-								return version;
-							}
-
-							break;
-						default:
-							reader.skipValue();
+						if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+							throw new ParseException("library entries must all be objects", reader);
 						}
+
+						reader.beginObject();
+
+						while (reader.hasNext()) {
+							switch (reader.nextName()) {
+								case "name":
+									if (reader.peek() != JsonToken.STRING) {
+										throw new ParseException("library name must be a string", reader);
+									}
+
+									String name = reader.nextString();
+									String[] maven = name.split("[:]");
+									String artifact = maven[1];
+									String version = maven[2];
+
+									if (artifact.equals("lwjgl")) {
+										return version;
+									}
+
+									break;
+								default:
+									reader.skipValue();
+							}
+						}
+
+						reader.endObject();
 					}
 
-					reader.endObject();
-				}
+					reader.endArray();
 
-				reader.endArray();
-
-				break;
-			default:
-				reader.skipValue();
+					break;
+				default:
+					reader.skipValue();
 			}
 		}
 
@@ -117,8 +120,8 @@ public class MmcPackCreator {
 		return null;
 	}
 
-	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion, String intermediaryVersion){
-		String lwjglMajorVer = lwjglVersion.substring(0,1);
+	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion, String intermediaryVersion) {
+		String lwjglMajorVer = lwjglVersion.substring(0, 1);
 		return examplePackJson
 				.replaceAll("\\$\\{mc_version}", gameVersion)
 				.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
@@ -131,13 +134,55 @@ public class MmcPackCreator {
 	}
 
 	private static String transformMinecraftJson(String minecraftPatchString, String lwjglVersion) {
-		String lwjglMajorVer = lwjglVersion.substring(0,1);
+		String lwjglMajorVer = lwjglVersion.substring(0, 1);
 		return minecraftPatchString
 				.replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	public static void compileMmcZip(File outPutDir,String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath){
+	private static String addCommonLibraries(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
+		String patch = "{\"formatVersion\": 1, " +
+				"\"libraries\": " +
+				"[{\"name\": \"%s\"," +
+				"\"url\": \"%s\"}]," +
+				"\"name\": \"%s\"," +
+				"\"type\": \"release\"," +
+				"\"uid\": \"%s\"," +
+				"\"version\": \"%s\"" +
+				"}";
+		OrnitheMeta.Endpoint<List<Map<String, String>>> librariesEndpoint =
+				OrnitheMeta.profileLibrariesEndpoint(gameVersion, loaderType, loaderVersion);
+		OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(librariesEndpoint))
+				.join();
+
+		List<Map<String, String>> libraries = meta.getEndpoint(librariesEndpoint);
+		@SuppressWarnings("unchecked")
+		Map<String, Object> pack = (Map<String, Object>) Gsons.read(JsonReader.json(packJson));
+		@SuppressWarnings("unchecked")
+		List<Map<String, ?>> components = (List<Map<String, ?>>) pack.get("components");
+		for (Map<String, String> map : libraries) {
+			String name = map.get("name");
+			String url = map.get("url");
+			String uid = name.substring(0, name.lastIndexOf(':')).replace(":", ".");
+			String libName = name.substring(name.indexOf(':')+1, name.lastIndexOf(':'));
+			String version = name.substring(name.lastIndexOf(':')+1);
+
+			Files.writeString(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
+					String.format(patch, name, url, libName, uid, version));
+			components.add(Map.of("cachedName", libName,"cachedVersion", version,"uid", uid));
+		}
+
+
+
+		StringWriter writer = new StringWriter();
+		Gsons.write(JsonWriter.json(writer), pack);
+		return writer.toString();
+
+
+	}
+
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath) {
+
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
@@ -168,29 +213,29 @@ public class MmcPackCreator {
 					LaunchJson.getMmcJson(version).join(), lwjglVersion
 			);
 
-			if(IS_LINUX_LIKE_OS){
-				transformedInstanceCfg+= "\n" +"OverrideCommands=true" +"\n" + ENV_WRAPPER_COMMAND;
+			if (IS_LINUX_LIKE_OS) {
+				transformedInstanceCfg += "\n" + "OverrideCommands=true" + "\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			File zipFile = new File(outPutDir,"Ornithe-" + gameVersion + ".zip");
-			if (zipFile.exists()) {
-				zipFile.delete();
+			Path zipFile = outPutDir.resolve("Ornithe-" + gameVersion + ".zip");
+			Files.deleteIfExists(zipFile);
+
+			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
+				Files.copy(MmcPackCreator.class.getResourceAsStream(examplePackDir + "/" + iconPath), fs.getPath(iconPath));
+				Files.writeString(fs.getPath(instanceCfgPath), transformedInstanceCfg);
+				Files.createDirectory(fs.getPath("patches"));
+				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
+				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
+				String packJsonWithLibraries = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
+						loaderType, loaderVersion, transformedPackJson);
+
+				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
 			}
 
-			FileOutputStream fileOut = new FileOutputStream(zipFile);
-			ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-
-			copyResourceToZip(zipOut, examplePackDir, iconPath);
-			writeJsonToZip(zipOut, instanceCfgPath, transformedInstanceCfg);
-			writeJsonToZip(zipOut, intermediaryJsonPath, transformedIntermediaryJson);
-			writeJsonToZip(zipOut, packJsonPath, transformedPackJson);
-			writeJsonToZip(zipOut, minecraftPatchPath, transformedMinecraftJson);
-
-			zipOut.close();
-			fileOut.close();
 			if (copyProfilePath) {
-				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.getAbsolutePath()), null);
+				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.toString()), null);
 			}
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -204,23 +249,6 @@ public class MmcPackCreator {
 			os.write(buffer, 0, length);
 		}
 		return os.toString(StandardCharsets.UTF_8);
-	}
-
-	private static void copyResourceToZip(ZipOutputStream zipOut, String dir, String path) throws IOException {
-		InputStream resource = MmcPackCreator.class.getResourceAsStream(String.format("%s/%s", dir, path));
-		byte[] buffer = new byte[1024];
-		ZipEntry zipEntry = new ZipEntry(path);
-		zipOut.putNextEntry(zipEntry);
-		for (int length; (length = resource.read(buffer)) != -1; ) {
-			zipOut.write(buffer, 0, length);
-		}
-	}
-
-	private static void writeJsonToZip(ZipOutputStream zipOut, String path, String json) throws IOException {
-		byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-		ZipEntry zipEntry = new ZipEntry(path);
-		zipOut.putNextEntry(zipEntry);
-		zipOut.write(bytes);
 	}
 
 	static {

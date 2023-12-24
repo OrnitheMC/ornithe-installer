@@ -39,6 +39,26 @@ public final class OrnitheMeta {
 	public static final Endpoint<List<String>> FABRIC_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/fabric-loader");
 	public static final Endpoint<List<String>> QUILT_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/quilt-loader");
 
+	@SuppressWarnings("unchecked")
+	public static Endpoint<List<Map<String, String>>> profileLibrariesEndpoint(String version, LoaderType type, String loaderVersion){
+		String loader = switch (type){
+			case FABRIC -> "fabric-loader";
+			case QUILT -> "quilt-loader";
+		};
+		return new Endpoint<>(String.format("/v3/versions/%s/%s/%s/profile/json", loader, version, loaderVersion), reader -> {
+
+			List<Map<String, String>> libraries = new ArrayList<>();
+			Map<String, Object> map = (Map<String, Object>) Gsons.read(reader);
+			List<Map<String, String>> json = (List<Map<String, String>>) map.get("libraries");
+			json.forEach(s -> {
+				if (s.get("url").equals("https://libraries.minecraft.net/")){
+					libraries.add(s);
+				}
+			});
+			return libraries;
+		});
+	}
+
 	public static Endpoint<List<String>> loaderVersionsEndpoint(LoaderType type) {
 		switch (type) {
 		case FABRIC:
