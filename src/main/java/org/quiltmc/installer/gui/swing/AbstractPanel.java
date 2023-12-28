@@ -17,20 +17,11 @@
 package org.quiltmc.installer.gui.swing;
 
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -100,18 +91,14 @@ abstract class AbstractPanel extends JPanel {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
-		for (VersionManifest.Version version : manifest) {
-			if (version.type().equals("release")
-				|| (version.type().equals("snapshot") && snapshots)
-				|| (version.type().equals("old_beta") && snapshots)
-				|| (version.type().equals("old_alpha") && snapshots)
-				|| (version.type().equals("alpha_server") && snapshots)
-				|| (version.type().equals("classic_server") && snapshots)) {
-				if (intermediaryVersions.containsKey(version.id(side))) {
-					comboBox.addItem(version.id());
-				}
-			}
-		}
+		manifest.parallelStream().filter(version -> version.type().equals("release")
+						|| (version.type().equals("snapshot") && snapshots)
+						|| (version.type().equals("old_beta") && snapshots)
+						|| (version.type().equals("old_alpha") && snapshots)
+						|| (version.type().equals("alpha_server") && snapshots)
+						|| (version.type().equals("classic_server") && snapshots))
+				.filter(version -> intermediaryVersions.containsKey(version.id(side)))
+				.map(VersionManifest.Version::id).forEachOrdered(comboBox::addItem);
 
 		comboBox.setEnabled(true);
 	}

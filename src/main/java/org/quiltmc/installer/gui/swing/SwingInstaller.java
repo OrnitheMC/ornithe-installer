@@ -23,24 +23,14 @@ import org.quiltmc.installer.VersionManifest;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
  * The logic side of the swing gui for the installer.
  */
 public final class SwingInstaller extends JFrame {
-	public static final Executor SWING_EXECUTOR = SwingUtilities::invokeLater;
 	private final ClientPanel clientPanel;
 	private final ServerPanel serverPanel;
 
@@ -52,7 +42,7 @@ public final class SwingInstaller extends JFrame {
 			e.printStackTrace();
 		}
 
-        SwingUtilities.invokeLater(SwingInstaller::new);
+		new SwingInstaller();
 	}
 
 	private SwingInstaller() {
@@ -86,7 +76,7 @@ public final class SwingInstaller extends JFrame {
 
 				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 				this.serverPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
-			}), SWING_EXECUTOR).exceptionally(e -> {
+			})).exceptionally(e -> {
 				e.printStackTrace();
 				AbstractPanel.displayError(this, e);
 				return null;
