@@ -16,7 +16,7 @@ val env = System.getenv()
 version = if (env["SNAPSHOTS_URL"] != null) {
 	"0-SNAPSHOT"
 } else {
-	"0.10.0"
+	"0.10.1"
 }
 base.archivesBaseName = project.name
 
