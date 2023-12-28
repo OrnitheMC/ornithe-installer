@@ -23,14 +23,10 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
@@ -39,7 +35,7 @@ import org.quiltmc.parsers.json.JsonToken;
  * An object representation of the version manifest used by the launcher.
  */
 // TODO: Abstract to another library for sharing logic with meta?
-public final class VersionManifest implements Iterable<VersionManifest.Version> {
+public final class VersionManifest implements Collection<VersionManifest.Version> {
 	public static final String LAUNCHER_META_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
 	public static final String VERSION_META_URL = "https://skyrising.github.io/mc-versions/version/manifest/%s.json";
 	private final Version latestRelease;
@@ -344,8 +340,77 @@ public final class VersionManifest implements Iterable<VersionManifest.Version> 
 	}
 
 	@Override
+	public int size() {
+		return versions.size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return versions.isEmpty();
+	}
+
+	@Override
+	public boolean contains(Object o) {
+		if (o instanceof String){
+			return versions.containsKey(o);
+		} else return o instanceof Version && versions.containsValue(o);
+	}
+
+	@Override
 	public Iterator<Version> iterator() {
 		return Collections.unmodifiableMap(this.versions).values().iterator();
+	}
+
+	@NotNull
+	@Override
+	public Object[] toArray() {
+		return versions.values().toArray();
+	}
+
+	@NotNull
+	@Override
+	public <T> T[] toArray(T[] a) {
+		return versions.values().toArray(a);
+	}
+
+	@Override
+	public boolean add(Version version) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean remove(Object o) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean containsAll(@NotNull Collection<?> c) {
+		return versions.values().containsAll(c);
+	}
+
+	@Override
+	public boolean addAll(@NotNull Collection<? extends Version> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean removeAll(@NotNull Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean retainAll(@NotNull Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void clear() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Spliterator<Version> spliterator() {
+		return Collections.unmodifiableMap(this.versions).values().spliterator();
 	}
 
 	public static final class Version {
