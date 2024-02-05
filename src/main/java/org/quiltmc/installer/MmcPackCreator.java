@@ -181,7 +181,7 @@ public class MmcPackCreator {
 
 	}
 
-	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath) {
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath, boolean addCommonLibraries) {
 
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
@@ -226,14 +226,19 @@ public class MmcPackCreator {
 				Files.createDirectory(fs.getPath("patches"));
 				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
 				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
-				String packJsonWithLibraries = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
-						loaderType, loaderVersion, transformedPackJson);
-
-				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
+				String finalPackJson;
+				if (addCommonLibraries) {
+					finalPackJson = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
+							loaderType, loaderVersion, transformedPackJson);
+				} else {
+					finalPackJson = transformedPackJson;
+				}
+				Files.writeString(fs.getPath(packJsonPath), finalPackJson);
 			}
 
 			if (copyProfilePath) {
-				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(zipFile.toString()), null);
+				StringSelection path = new StringSelection(zipFile.toString());
+				Toolkit.getDefaultToolkit().getSystemClipboard().setContents(path, path);
 			}
 
 		} catch (IOException e) {

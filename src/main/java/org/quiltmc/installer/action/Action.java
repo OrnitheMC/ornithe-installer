@@ -90,8 +90,8 @@ public abstract class Action<M> {
 		return new ListVersions(loaderType, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
-		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, installDir, generateProfile, copyProfilePath);
+	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath, boolean addCommonLibraries) {
+		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, installDir, generateProfile, copyProfilePath, addCommonLibraries);
 	}
 
 	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {

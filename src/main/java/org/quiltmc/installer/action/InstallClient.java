@@ -52,9 +52,10 @@ public final class InstallClient extends Action<InstallMessageType> {
 	private final String installDir;
 	private final boolean generateProfile;
 	private final boolean copyProfilePath;
+	private final boolean addCommonLibraries;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, String installDir, boolean generateProfile, boolean copyProfilePath) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, String installDir, boolean generateProfile, boolean copyProfilePath, boolean addCommonLibraries) {
 		this.minecraftVersion = minecraftVersion;
 		this.launcherType = launcherType;
 		this.loaderType = loaderType;
@@ -63,6 +64,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 		this.installDir = installDir;
 		this.generateProfile = generateProfile;
 		this.copyProfilePath = copyProfilePath;
+		this.addCommonLibraries = addCommonLibraries;
 	}
 
 	@Override
@@ -218,7 +220,8 @@ public final class InstallClient extends Action<InstallMessageType> {
 					this.loaderVersion,
 					this.intermediary,
 					installationInfo.manifest(),
-					this.copyProfilePath
+					this.copyProfilePath,
+					this.addCommonLibraries
 			);
 			statusTracker.accept(InstallMessageType.SUCCEED);
 		}).exceptionally(e -> {

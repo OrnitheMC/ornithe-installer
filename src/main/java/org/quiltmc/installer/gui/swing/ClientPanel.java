@@ -49,11 +49,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 	//private JComponent telemetryCheckBox;
 	private JCheckBox generateProfileCheckBox;
 	private JCheckBox copyProfilePathCheckBox;
+	private JCheckBox addCommonLibrariesCheckBox;
 	private final JButton installButton;
 	private boolean showSnapshots;
 	private boolean showLoaderBetas;
 	private boolean generateProfile;
 	private boolean copyProfilePath;
+	private boolean addCommonLibraries;
 
 	ClientPanel(SwingInstaller gui) {
 		super(gui);
@@ -167,9 +169,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 			this.generateProfile = true;
 			this.generateProfileCheckBox = generateProfileBox;
 
-			row5.add(copyProfilePathCheckBox = new JCheckBox(Localization.get("gui.client.copy-profile-to-clipboard"), null, true)).setVisible(false);
-			copyProfilePathCheckBox.addItemListener(e -> this.copyProfilePath = e.getStateChange() == ItemEvent.SELECTED);
+			row5.add(this.copyProfilePathCheckBox = new JCheckBox(Localization.get("gui.client.copy-profile-to-clipboard"), null, true)).setVisible(false);
+			this.copyProfilePathCheckBox.addItemListener(e -> this.copyProfilePath = e.getStateChange() == ItemEvent.SELECTED);
 			this.copyProfilePath = true;
+
+			row5.add(this.addCommonLibrariesCheckBox = new JCheckBox(Localization.get("gui.client.add-common-libraries"), null, true)).setVisible(false);
+			addCommonLibrariesCheckBox.addItemListener(e -> this.addCommonLibraries = e.getStateChange() == ItemEvent.SELECTED);
+			this.addCommonLibraries = true;
 		}
 
 		// Install button
@@ -189,12 +195,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 				case OFFICIAL:
 					this.generateProfileCheckBox.setVisible(true);
 					this.copyProfilePathCheckBox.setVisible(false);
+					this.addCommonLibrariesCheckBox.setVisible(false);
 					this.installLocation.setText(OsPaths.getDefaultInstallationDir().toString());
 					this.installButton.setText(Localization.get("gui.install"));
 					break;
 				case MULTIMC:
 					this.generateProfileCheckBox.setVisible(false);
 					this.copyProfilePathCheckBox.setVisible(true);
+					this.addCommonLibrariesCheckBox.setVisible(true);
 					this.installButton.setText(Localization.get("gui.install.mmc"));
 					this.installLocation.setText(System.getProperty("user.dir"));
 					break;
@@ -222,7 +230,8 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 				this.intermediaryVersions().get(version.id(GameSide.CLIENT)),
 				this.installLocation.getText(),
 				this.generateProfile,
-				this.copyProfilePath
+				this.copyProfilePath,
+				this.addCommonLibraries
 		);
 
 		AtomicReference<InstallMessageType> result = new AtomicReference<>();

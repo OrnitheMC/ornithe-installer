@@ -33,6 +33,8 @@ where install options for only the client also include:
                   Prevents you from counting towards the monthly user statistics
    --copy-profile-path
                   Copies the profile path to the clipboard if generating a MultiMC instance
+   --no-extra-libraries
+                  If generating a MultiMC profile, do not add common libraries from later versions of minecraft
 
 where install options for only the server also include:
 
