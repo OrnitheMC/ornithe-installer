@@ -37,10 +37,10 @@ public final class LaunchJson {
 		return LaunchJson.get(gameVersion).thenApply(
 				vanillaJson ->  {
 					try {
-						Map<String, Object> vanilaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
+						Map<String, Object> vanillaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
 
 						String clientName = "com.mojang:minecraft:" + gameVersion.id() + ":client";
-						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanilaMap.get("downloads");
+						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
 						Map<String, Object> mainJar = Map.of(
@@ -48,20 +48,20 @@ public final class LaunchJson {
 								"name",clientName
 						);
 
-						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanilaMap.get("libraries");
+						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
 						vanillaLibraries.removeIf(lib -> {
 							String name = lib.get("name");
 							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
 						});
 
 						List<String> traits = new ArrayList<>();
-						if (((String) vanilaMap.get("mainClass")).contains("launchwrapper")) {
+						if (((String) vanillaMap.get("mainClass")).contains("launchwrapper")) {
 							traits.add("texturepacks");
 						}
 
-						String minecraftArguments = (String) vanilaMap.getOrDefault("minecraftArguments", "");
-						if (vanilaMap.containsKey("arguments")) {
-							Map<String, Object> arguments =  ((Map<String, Object>) vanilaMap.get("arguments"));//.get("game");
+						String minecraftArguments = (String) vanillaMap.getOrDefault("minecraftArguments", "");
+						if (vanillaMap.containsKey("arguments")) {
+							Map<String, Object> arguments =  ((Map<String, Object>) vanillaMap.get("arguments"));//.get("game");
 
 							if(!arguments.isEmpty()){
 								List<Object> gameArguments = (List<Object>) arguments.get("game");
@@ -85,7 +85,7 @@ public final class LaunchJson {
 						Gsons.write(
 								JsonWriter.json(writer),
 								buildPackJsonMap(
-										vanilaMap, vanillaLibraries, minecraftArguments, traits, mainJar, gameVersion.id()
+										vanillaMap, vanillaLibraries, minecraftArguments, traits, mainJar, gameVersion.id()
 								)
 						);
 
