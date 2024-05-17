@@ -219,6 +219,7 @@ public final class LaunchJson {
 			} catch (IOException e) {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
+			// TODO: HACK HACK HACK: inject intermediary instead of hashed
 		}).thenApplyAsync(raw -> {
 			Map<String, Object> map;
 			try {
@@ -228,14 +229,22 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
-			/*if (type == LoaderType.QUILT) {
-				@SuppressWarnings("unchecked")
-				Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
-				arguments.computeIfAbsent("jvm", (key) -> new ArrayList<>()).add("-Dloader.disable_beacon=true");
-			}*/ // Quilt Removed The Beacon.
+			if (type == LoaderType.QUILT) {
+				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
+				switch (loaderVersion) {
+					case "0.19.2", "0.19.3", "0.19.4" -> {
+						@SuppressWarnings("unchecked")
+						Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
+						arguments
+								.computeIfAbsent("jvm", (key) -> new ArrayList<>())
+								.add("-Dloader.disable_beacon=true");
+					}
+					default -> {
+						// do nothing
+					}
+				}
+			}
 
-
-			// TODO: HACK HACK HACK: inject intermediary instead of hashed
 			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
 			for (Map<String, String> library : libraries) {
 				if (library.get("name").startsWith("net.fabricmc:intermediary")) {
