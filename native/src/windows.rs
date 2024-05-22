@@ -2,12 +2,12 @@
 // Some code in this file referenced from fabric-installer-native-bootstrap
 use std::ffi::OsString;
 use std::io;
-use std::io::Error;
 use std::path::PathBuf;
 use winreg::RegKey;
 
 pub const PLATFORM_JAVA_EXECUTABLE_NAME: &str = "javaw";
 pub const UWP_PATH: &str = "Packages/Microsoft.4297127D64EC6_8wekyb3d8bbwe/LocalCache/Local/";
+pub const PROGRAM_FILES_PATH: &str = "C:/Program Files (x86)/Minecraft Launcher/";
 
 fn get_uwp_installer() -> io::Result<PathBuf> {
 	println!("Attempting to find a Java version from the UWP Minecraft installer");
@@ -45,16 +45,12 @@ pub(crate) fn get_jre_locations() -> io::Result<Vec<PathBuf>> {
 	let paths = vec![
 		"runtime/java-runtime-gamma/windows-x64/java-runtime-gamma/bin/javaw.exe",
 		"runtime/java-runtime-beta/windows-x64/java-runtime-beta/bin/javaw.exe",
+		"runtime/java-runtime-delta/windows-x64/java-runtime-delta/bin/javaw.exe",
 
 		// x86 versions
 		"runtime/java-runtime-gamma/windows-x86/java-runtime-gamma/bin/javaw.exe",
-		"runtime/java-runtime-beta/windows-x86/java-runtime-beta/bin/javaw.exe", // used by at least 1.18.2
-
-
-
-		// All signs point to a versioning scheme based on Greek letters. Let's future-proof it against the next predicted one
-		"runtime/java-runtime-delta/windows-x64/java-runtime-delta/javaw.exe",
-		"runtime/java-runtime-delta/windows-x86/java-runtime-delta/javaw.exe"
+		"runtime/java-runtime-beta/windows-x86/java-runtime-beta/bin/javaw.exe", // Used 1.18.2 and above
+		"runtime/java-runtime-delta/windows-x86/java-runtime-delta/bin/javaw.exe", // Used by 1.20.5 and above
 	];
 
 	let mut candidates = Vec::new();
@@ -72,6 +68,13 @@ pub(crate) fn get_jre_locations() -> io::Result<Vec<PathBuf>> {
 	if let Ok(installer_dir) = installer_dir {
 		for x in &paths {
 			candidates.push(installer_dir.join(x));
+		}
+	}
+
+	let program_files_dir = PathBuf::from(PROGRAM_FILES_PATH);
+	if program_files_dir.try_exists().unwrap_or(false) {
+		for x in &paths {
+			candidates.push(program_files_dir.join(x))
 		}
 	}
 

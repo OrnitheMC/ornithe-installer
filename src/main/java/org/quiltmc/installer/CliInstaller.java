@@ -193,13 +193,6 @@ public final class CliInstaller {
 						}
 
 						options.put("--copy-profile-path", null);
-
-					} else if (option.equals("--disable-beacon")) {
-						if (options.containsKey("--disable-beacon")) {
-							System.err.println("Encountered duplicate option \"--disable-beacon\", This shouldn't affect anything");
-						}
-
-						options.put("--disable-beacon", null);
 					// Common option
 					} else if (option.startsWith("--install-dir")) {
 						if (options.containsKey("--install-dir")) {
