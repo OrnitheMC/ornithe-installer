@@ -117,69 +117,63 @@ public final class InstallClient extends Action<InstallMessageType> {
 		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(installationInfo.manifest().getVersion(this.minecraftVersion)).thenCompose(vanillaLaunchJson -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion()).thenAccept(launchJson -> {
 			println("Creating profile launch json");
 
+			Map<String, Object> vanillaLaunchJsonMap;
+			Map<String, Object> launchJsonMap;
 			try {
-				Map<String, Object> vanillaLaunchJsonMap;
-				Map<String, Object> launchJsonMap;
-				try {
-					vanillaLaunchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaLaunchJson));
-					launchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(launchJson));
-				} catch (IOException e) {
-					throw new UncheckedIOException(e);
-				}
-
-				if (!vanillaLaunchJsonMap.containsKey("id")) {
-					throw new RuntimeException("vanilla launcher profile json is missing the profile id!");
-				}
-				if (!launchJsonMap.containsKey("id")) {
-					throw new RuntimeException("launcher profile json is missing the profile id!");
-				}
-
-				String vanillaProfileName = (String) vanillaLaunchJsonMap.get("id");
-				String profileName = (String) launchJsonMap.get("id");
-
-				// Directories
-				Path versionsDir = this.installDirPath.resolve("versions");
-				Path vanillaProfileDir = versionsDir.resolve(vanillaProfileName);
-				Path vanillaProfileJson = vanillaProfileDir.resolve(vanillaProfileName + ".json");
-				Path profileDir = versionsDir.resolve(profileName);
-				Path profileJson = profileDir.resolve(profileName + ".json");
-
-				// Nuke everything that already exists
-				clearProfileDir(vanillaProfileDir);
-				clearProfileDir(profileDir);
-
-				/*
-				 * Abuse some of the vanilla launcher's undefined behavior:
-				 *
-				 * Assumption is the profile name is the same as the maven artifact.
-				 * The profile name we set is a combination of two artifacts (loader + mappings).
-				 * As long as the jar file exists of the same name the launcher won't complain.
-				 */
-
-				// Make our pretender jar
-				makePretenderJar(vanillaProfileDir, vanillaProfileName);
-				makePretenderJar(profileDir, profileName);
-
-				// Write the launch json
-				writeLaunchJson(vanillaProfileJson, vanillaLaunchJson);
-				writeLaunchJson(profileJson, launchJson);
-
-				// Create the profile - this is typically set by default
-				if (this.generateProfile) {
-					try {
-						println("Creating new profile");
-						LauncherProfiles.updateProfiles(this.installDirPath, profileName, this.minecraftVersion, loaderType);
-					} catch (IOException e) {
-						throw new UncheckedIOException(e); // Handle via exceptionally
-					}
-				}
-				statusTracker.accept(InstallMessageType.SUCCEED);
-				println("Completed installation");
-			} catch (InterruptedException | ExecutionException e) {
-				// Should not happen since we allOf'd it.
-				// Anyways if it does happen let exceptionally deal with it
-				throw new RuntimeException(e);
+				vanillaLaunchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaLaunchJson));
+				launchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(launchJson));
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
 			}
+
+			if (!vanillaLaunchJsonMap.containsKey("id")) {
+				throw new RuntimeException("vanilla launcher profile json is missing the profile id!");
+			}
+			if (!launchJsonMap.containsKey("id")) {
+				throw new RuntimeException("launcher profile json is missing the profile id!");
+			}
+
+			String vanillaProfileName = (String) vanillaLaunchJsonMap.get("id");
+			String profileName = (String) launchJsonMap.get("id");
+
+			// Directories
+			Path versionsDir = this.installDirPath.resolve("versions");
+			Path vanillaProfileDir = versionsDir.resolve(vanillaProfileName);
+			Path vanillaProfileJson = vanillaProfileDir.resolve(vanillaProfileName + ".json");
+			Path profileDir = versionsDir.resolve(profileName);
+			Path profileJson = profileDir.resolve(profileName + ".json");
+
+			// Nuke everything that already exists
+			clearProfileDir(vanillaProfileDir);
+			clearProfileDir(profileDir);
+
+			/*
+			 * Abuse some of the vanilla launcher's undefined behavior:
+			 *
+			 * Assumption is the profile name is the same as the maven artifact.
+			 * The profile name we set is a combination of two artifacts (loader + mappings).
+			 * As long as the jar file exists of the same name the launcher won't complain.
+			 */
+
+			// Make our pretender jar
+			makePretenderJar(vanillaProfileDir, vanillaProfileName);
+			makePretenderJar(profileDir, profileName);
+
+			// Write the launch json
+			writeLaunchJson(vanillaProfileJson, vanillaLaunchJson);
+			writeLaunchJson(profileJson, launchJson);
+
+			// Create the profile - this is typically set by default
+			if (this.generateProfile) {
+				try {
+					println("Creating new profile");
+					LauncherProfiles.updateProfiles(this.installDirPath, profileName, this.minecraftVersion, loaderType);
+				} catch (IOException e) {
+					throw new UncheckedIOException(e); // Handle via exceptionally
+				}
+			}
+			statusTracker.accept(InstallMessageType.SUCCEED);
+			println("Completed installation");
 		}))).exceptionally(e -> {
 			eprintln("Failed to install client");
 			e.printStackTrace();
