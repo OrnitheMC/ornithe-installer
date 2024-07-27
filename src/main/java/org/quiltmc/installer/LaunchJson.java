@@ -159,6 +159,9 @@ public final class LaunchJson {
 					}
 				}
 
+				// add the -vanilla suffix to the vanilla json 'cause
+				// we use a different version manifest than mojang and
+				// some version ids can differ from the official ones
 				map.put("id", String.format("%s-vanilla", gameVersion.id()));
 
 				StringWriter writer = new StringWriter();

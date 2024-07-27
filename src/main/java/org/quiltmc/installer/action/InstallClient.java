@@ -26,13 +26,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.OsPaths;
+import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LauncherProfiles;
 import org.quiltmc.installer.LauncherType;
@@ -115,15 +118,24 @@ public final class InstallClient extends Action<InstallMessageType> {
 			println("Creating profile launch json");
 
 			try {
-				// add the -vanilla suffix to the vanilla json 'cause
-				// we use a different version manifest than mojang and
-				// some version ids can differ from the official ones
-				String vanillaProfileName = String.format("%s-vanilla", this.minecraftVersion);
-				String profileName = String.format("%s-loader-%s-%s-ornithe",
-						this.loaderType.getName(),
-						installationInfoFuture.get().loaderVersion(),
-						this.minecraftVersion
-				);
+				Map<String, Object> vanillaLaunchJsonMap;
+				Map<String, Object> launchJsonMap;
+				try {
+					vanillaLaunchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaLaunchJson));
+					launchJsonMap = (Map<String, Object>) Gsons.read(JsonReader.json(launchJson));
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+
+				if (!vanillaLaunchJsonMap.containsKey("id")) {
+					throw new RuntimeException("vanilla launcher profile json is missing the profile id!");
+				}
+				if (!launchJsonMap.containsKey("id")) {
+					throw new RuntimeException("launcher profile json is missing the profile id!");
+				}
+
+				String vanillaProfileName = (String) vanillaLaunchJsonMap.get("id");
+				String profileName = (String) launchJsonMap.get("id");
 
 				// Directories
 				Path versionsDir = this.installDirPath.resolve("versions");
