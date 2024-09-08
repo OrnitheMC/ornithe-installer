@@ -98,7 +98,7 @@ abstract class AbstractPanel extends JPanel {
 						|| (version.type().equals("old_alpha") && snapshots)
 						|| (version.type().equals("alpha_server") && snapshots)
 						|| (version.type().equals("classic_server") && snapshots))
-				.filter(version -> intermediaryVersions.containsKey(version.id(side)))
+				.filter(version -> intermediaryVersions.containsKey(version.id()) || intermediaryVersions.containsKey(version.id() + "-" + side.id()))
 				.map(VersionManifest.Version::id).forEachOrdered(comboBox::addItem);
 
 		comboBox.setEnabled(true);
