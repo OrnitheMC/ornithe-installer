@@ -54,7 +54,7 @@ tasks.compileJava {
 
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion.set(JavaLanguageVersion.of(8))
 	}
 }
 // Cannot use application for the time being because shadow does not like mainClass being set for some reason.
