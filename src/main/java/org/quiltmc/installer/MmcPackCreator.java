@@ -235,7 +235,8 @@ public class MmcPackCreator {
 			dummyZipOutputStream.close();
 			// End god awful workaround
 
-			try (FileSystem fs = FileSystems.newFileSystem(zipFile, null)) {
+            //noinspection RedundantCast Don't remove the classloader cast unless you want to break builds
+            try (FileSystem fs = FileSystems.newFileSystem(zipFile, (ClassLoader) null)) {
 				Files.copy(MmcPackCreator.class.getResourceAsStream(examplePackDir + "/" + iconPath), fs.getPath(iconPath));
 				Files.write(fs.getPath(instanceCfgPath), transformedInstanceCfg.getBytes(StandardCharsets.UTF_8));
 				Files.createDirectory(fs.getPath("patches"));
