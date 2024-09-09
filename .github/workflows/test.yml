@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
-          java-version: '1.8'
+          java-version: '8'
           cache: 'gradle'
       - uses: gradle/actions/wrapper-validation@v3
       - name: Grant execute permission for Gradle wrapper
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
-          java-version: '1.8'
+          java-version: '8'
           cache: 'gradle'
       - uses: gradle/actions/wrapper-validation@v3
       - run: ./gradlew build copyForNative --stacktrace
