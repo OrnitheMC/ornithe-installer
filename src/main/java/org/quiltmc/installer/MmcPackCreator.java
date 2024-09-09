@@ -23,14 +23,15 @@ import org.quiltmc.parsers.json.JsonWriter;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.*;
+import java.util.zip.*;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
@@ -167,9 +168,13 @@ public class MmcPackCreator {
 			String libName = name.substring(name.indexOf(':')+1, name.lastIndexOf(':'));
 			String version = name.substring(name.lastIndexOf(':')+1);
 
-			Files.writeString(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
-					String.format(patch, name, url, libName, uid, version));
-			components.add(Map.of("cachedName", libName,"cachedVersion", version,"uid", uid));
+			Files.write(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
+					String.format(patch, name, url, libName, uid, version).getBytes(StandardCharsets.UTF_8));
+			components.add(new HashMap<String, Object>() {{
+				put("cachedName", libName);
+				put("cachedVersion", version);
+				put("uid", uid);
+			}});
 		}
 
 
@@ -220,16 +225,28 @@ public class MmcPackCreator {
 			Path zipFile = outPutDir.resolve("Ornithe-" + gameVersion + ".zip");
 			Files.deleteIfExists(zipFile);
 
-			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
+			// This is a god awful workaround, because paths can't be cleanly converted to URIs in j8, and for some reason, you can't pass parameters into newFileSystem with a path argument.
+			// Thanks Java :)
+			ZipOutputStream dummyZipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFile.toFile().toPath()));
+			// I need to put an entry inside, or it creates a 0-byte file, which filesystem doesn't like
+			dummyZipOutputStream.putNextEntry(new ZipEntry("mmc-pack.json"));
+			dummyZipOutputStream.write("if you see this, this didn't work".getBytes(StandardCharsets.UTF_8));
+			dummyZipOutputStream.closeEntry();
+			dummyZipOutputStream.close();
+			// End god awful workaround
+
+			try (FileSystem fs = FileSystems.newFileSystem(zipFile, null)) {
 				Files.copy(MmcPackCreator.class.getResourceAsStream(examplePackDir + "/" + iconPath), fs.getPath(iconPath));
-				Files.writeString(fs.getPath(instanceCfgPath), transformedInstanceCfg);
+				Files.write(fs.getPath(instanceCfgPath), transformedInstanceCfg.getBytes(StandardCharsets.UTF_8));
 				Files.createDirectory(fs.getPath("patches"));
-				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
-				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
+				Files.write(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson.getBytes(StandardCharsets.UTF_8));
+				Files.write(fs.getPath(minecraftPatchPath), transformedMinecraftJson.getBytes(StandardCharsets.UTF_8));
 				String packJsonWithLibraries = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
 						loaderType, loaderVersion, transformedPackJson);
 
-				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
+				// Remove the workaround file and replace it
+				Files.delete(fs.getPath(packJsonPath));
+				Files.write(fs.getPath(packJsonPath), packJsonWithLibraries.getBytes(StandardCharsets.UTF_8));
 			}
 
 			if (copyProfilePath) {
@@ -248,7 +265,7 @@ public class MmcPackCreator {
 		for (int length; (length = resource.read(buffer)) != -1; ) {
 			os.write(buffer, 0, length);
 		}
-		return os.toString(StandardCharsets.UTF_8);
+		return os.toString(StandardCharsets.UTF_8.name());
 	}
 
 	static {

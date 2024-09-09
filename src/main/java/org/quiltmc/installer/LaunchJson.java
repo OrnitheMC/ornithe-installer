@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class LaunchJson {
+	private static final List<String> BEACON_ISSUE_VERSIONS = Arrays.asList("0.19.2", "0.19.3", "0.19.4");
 
 	@SuppressWarnings("unchecked")
 	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion){
@@ -43,10 +44,10 @@ public final class LaunchJson {
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
-						Map<String, Object> mainJar = Map.of(
-								"downloads", Map.of("artifact",client),
-								"name",clientName
-						);
+						Map<String, Object> mainJar = new HashMap<String, Object>() {{
+								put("downloads", new HashMap<Object, Object>(){{put("artifact", client);}});
+								put("name", clientName);
+							}};
 
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
 						vanillaLibraries.removeIf(lib -> {
@@ -113,7 +114,7 @@ public final class LaunchJson {
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
-		moddedJsonMap.put("compatibleJavaMajors", List.of(8));
+		moddedJsonMap.put("compatibleJavaMajors", new ArrayList<Object>(){{add(8);}});
 		moddedJsonMap.put("formatVersion", 1);
 		moddedJsonMap.put("libraries", modifiedLibraries);
 		moddedJsonMap.put("mainClass", vanilaMap.get("mainClass"));
@@ -121,12 +122,12 @@ public final class LaunchJson {
 		moddedJsonMap.put("minecraftArguments", minecraftArguments);
 		moddedJsonMap.put("name", "Minecraft");
 		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
-		moddedJsonMap.put("requires",List.of(
-				Map.of(
-						"suggests", "${lwjgl_version}",
-						"uid", "${lwjgl_uid}"
-				)
-		));
+		moddedJsonMap.put("requires", new ArrayList<Object>() {{
+						add(new HashMap<Object, Object>() {{
+								put("suggests", "${lwjgl_version}");
+								put("uid", "${lwjgl_uid}");
+							}});
+					}});
 		moddedJsonMap.put("type", vanilaMap.get("type"));
 		moddedJsonMap.put("uid", "net.minecraft");
 		moddedJsonMap.put("version", gameVersion);
@@ -234,17 +235,12 @@ public final class LaunchJson {
 
 			if (type == LoaderType.QUILT) {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
-				switch (loaderVersion) {
-					case "0.19.2", "0.19.3", "0.19.4" -> {
-						@SuppressWarnings("unchecked")
-						Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
-						arguments
-								.computeIfAbsent("jvm", (key) -> new ArrayList<>())
-								.add("-Dloader.disable_beacon=true");
-					}
-					default -> {
-						// do nothing
-					}
+				if (BEACON_ISSUE_VERSIONS.contains(loaderVersion)) {
+					@SuppressWarnings("unchecked")
+					Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
+					arguments
+							.computeIfAbsent("jvm", (key) -> new ArrayList<>())
+							.add("-Dloader.disable_beacon=true");
 				}
 			}
 

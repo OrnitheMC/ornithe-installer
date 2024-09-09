@@ -16,11 +16,7 @@
 
 package org.quiltmc.installer;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.action.Action;
@@ -333,7 +329,7 @@ public final class CliInstaller {
 	}
 
 	private static String fetchIntermediary(GameSide side, String minecraftVersion) {
-		return OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Set.of(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT)).thenApply(meta -> {
+		return OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, new HashSet<OrnitheMeta.Endpoint<?>>() {{add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);}}).thenApply(meta -> {
 			VersionManifest manifest = VersionManifest.create().join();
 			VersionManifest.Version version = manifest.getVersion(minecraftVersion);
 			return meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).get(version.id(side));

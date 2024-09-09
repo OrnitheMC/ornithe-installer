@@ -2,9 +2,8 @@ import java.net.URI
 
 plugins {
 	java
-	`java-library`
 	`maven-publish`
-	// application
+	application
 
 	id("net.kyori.blossom") version "1.3.1"
 	id("com.diffplug.spotless") version "6.19.0"
@@ -31,10 +30,6 @@ repositories {
 	}
 }
 
-sourceSets {
-	create("java8")
-}
-
 dependencies {
 	implementation("org.quiltmc.parsers:json:0.2.1")
 	compileOnly("org.jetbrains:annotations:20.1.0")
@@ -53,24 +48,21 @@ blossom {
 }
 
 tasks.compileJava {
-	options.release.set(17)
+	sourceCompatibility = "1.8"
+	targetCompatibility = "1.8"
 }
 
-tasks.getByName("compileJava8Java", JavaCompile::class) {
-	options.release.set(8)
-}
 java {
 	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(17))
+		languageVersion.set(JavaLanguageVersion.of(8))
 	}
 }
 // Cannot use application for the time being because shadow does not like mainClass being set for some reason.
 // There is a PR which has fixed this, so update shadow probably when 6.10.1 or 6.11 is out
-//application {
-//	mainClass.set("org.quiltmc.installer.Main")
-//}
+application {
+	mainClass.set("org.quiltmc.installer.Main")
+}
 
-tasks.jar.get().dependsOn(tasks["compileJava8Java"])
 tasks.jar {
 	manifest {
 		attributes["Implementation-Title"] = "Ornithe-Installer"
@@ -88,7 +80,6 @@ tasks.shadowJar {
 	// Compiler does not know which set method we are targeting with null value
 	val classifier: String? = null;
 	archiveClassifier.set(classifier)
-	from(sourceSets["java8"].output)
 }
 
 tasks.assemble {

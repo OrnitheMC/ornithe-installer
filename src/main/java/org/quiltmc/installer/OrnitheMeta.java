@@ -41,10 +41,18 @@ public final class OrnitheMeta {
 
 	@SuppressWarnings("unchecked")
 	public static Endpoint<List<Map<String, String>>> profileLibrariesEndpoint(String version, LoaderType type, String loaderVersion){
-		String loader = switch (type){
-			case FABRIC -> "fabric-loader";
-			case QUILT -> "quilt-loader";
-		};
+		String loader;
+		switch (type) {
+			case FABRIC:
+				loader = "fabric-loader";
+				break;
+			case QUILT:
+				loader = "quilt-loader";
+				break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + type);
+        }
+
 		return new Endpoint<>(String.format("/v3/versions/%s/%s/%s/profile/json", loader, version, loaderVersion), reader -> {
 
 			List<Map<String, String>> libraries = new ArrayList<>();
@@ -96,19 +104,20 @@ public final class OrnitheMeta {
 
 			while (reader.hasNext()) {
                 switch (reader.nextName()) {
-                    case "version" -> {
+					case "version":
                         if (reader.peek() != JsonToken.STRING) {
                             throw new ParseException("Version must be a string", reader);
                         }
                         version = reader.nextString();
-                    }
-                    case "maven" -> {
+						break;
+					case "maven":
                         if (reader.peek() != JsonToken.STRING) {
                             throw new ParseException("maven must be a string", reader);
                         }
                         maven = reader.nextString();
-                    }
-                    case "stable" -> reader.nextBoolean(); // TODO
+						break;
+					case "stable":
+						reader.nextBoolean(); // TODO
                 }
 			}
 
