@@ -3,7 +3,7 @@ import java.net.URI
 plugins {
 	java
 	`maven-publish`
-	application
+//	application
 
 	id("net.kyori.blossom") version "1.3.1"
 	id("com.diffplug.spotless") version "6.19.0"
@@ -59,9 +59,9 @@ java {
 }
 // Cannot use application for the time being because shadow does not like mainClass being set for some reason.
 // There is a PR which has fixed this, so update shadow probably when 6.10.1 or 6.11 is out
-application {
-	mainClass.set("org.quiltmc.installer.Main")
-}
+//application {
+//	mainClass.set("org.quiltmc.installer.Main")
+//}
 
 tasks.jar {
 	manifest {
