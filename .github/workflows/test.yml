@@ -28,11 +28,6 @@ jobs:
           distribution: 'microsoft'
           java-version: 17
           cache: 'gradle'
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 8
-          cache: 'gradle'
       - uses: gradle/actions/wrapper-validation@v3
       - run: ./gradlew build copyForNative --stacktrace
       - run: rustup target add ${{ matrix.target }}-pc-windows-msvc

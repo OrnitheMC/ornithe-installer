@@ -52,11 +52,6 @@ tasks.compileJava {
 	targetCompatibility = "1.8"
 }
 
-java {
-	toolchain {
-		languageVersion.set(JavaLanguageVersion.of(8))
-	}
-}
 // Cannot use application for the time being because shadow does not like mainClass being set for some reason.
 // There is a PR which has fixed this, so update shadow probably when 6.10.1 or 6.11 is out
 //application {
