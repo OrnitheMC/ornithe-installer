@@ -9,7 +9,7 @@ plugins {
 	id("net.kyori.blossom") version "1.3.1"
 	id("com.diffplug.spotless") version "6.19.0"
 	id("com.github.johnrengelman.shadow") version "8.1.1"
-	id("xyz.wagyourtail.jvmdowngrader") version "1.1.2"
+	id("xyz.wagyourtail.jvmdowngrader") version "1.1.3"
 }
 
 group = "net.ornithemc"
