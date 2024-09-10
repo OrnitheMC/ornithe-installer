@@ -9,6 +9,7 @@ plugins {
 	id("net.kyori.blossom") version "1.3.1"
 	id("com.diffplug.spotless") version "6.19.0"
 	id("com.github.johnrengelman.shadow") version "8.1.1"
+	id("xyz.wagyourtail.jvmdowngrader") version "1.1.2"
 }
 
 group = "net.ornithemc"
@@ -29,10 +30,6 @@ repositories {
 	maven("https://maven.quiltmc.org/repository/release/") {
 		name = "QuiltMC Releases"
 	}
-}
-
-sourceSets {
-	create("java8")
 }
 
 dependencies {
@@ -56,9 +53,6 @@ tasks.compileJava {
 	options.release.set(17)
 }
 
-tasks.getByName("compileJava8Java", JavaCompile::class) {
-	options.release.set(8)
-}
 java {
 	toolchain {
 		languageVersion.set(JavaLanguageVersion.of(17))
@@ -70,7 +64,6 @@ java {
 //	mainClass.set("org.quiltmc.installer.Main")
 //}
 
-tasks.jar.get().dependsOn(tasks["compileJava8Java"])
 tasks.jar {
 	manifest {
 		attributes["Implementation-Title"] = "Ornithe-Installer"
@@ -79,26 +72,32 @@ tasks.jar {
 
 		attributes["Main-Class"] = "org.quiltmc.installer.Main"
 	}
+	destinationDirectory = temporaryDir
 }
 
 tasks.shadowJar {
 	relocate("org.quiltmc.parsers.json", "org.quiltmc.installer.lib.parsers.json")
 //	minimize()
+	destinationDirectory = temporaryDir
+}
 
-	// Compiler does not know which set method we are targeting with null value
-	val classifier: String? = null;
-	archiveClassifier.set(classifier)
-	from(sourceSets["java8"].output)
+tasks.downgradeJar {
+	dependsOn(tasks.jar)
+
+	inputFile.set(tasks.shadowJar.get().archiveFile)
+	destinationDirectory = temporaryDir
+}
+
+tasks.shadeDowngradedApi {
+	archiveClassifier.set(null as String?)
 }
 
 tasks.assemble {
-	dependsOn(tasks.shadowJar)
+	dependsOn(tasks.shadeDowngradedApi)
 }
 
 val copyForNative = tasks.register<Copy>("copyForNative") {
-	dependsOn(tasks.shadowJar)
-	dependsOn(tasks.jar)
-	from(tasks.shadowJar)
+	from(tasks.shadeDowngradedApi)
 	into(file("build"))
 
 	rename {
@@ -116,6 +115,14 @@ publishing {
 		if (env["TARGET"] == null) {
 			create<MavenPublication>("mavenJava") {
 				from(components["java"])
+
+				artifact(tasks.downgradeJar.get()) {
+					classifier = "downgraded"
+				}
+
+				artifact(tasks.shadeDowngradedApi.get()) {
+					classifier = "downgraded-shaded"
+				}
 			}
 		} else {
 			// TODO: When we build macOS make this work
