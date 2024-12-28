@@ -95,6 +95,10 @@ public final class OrnitheMeta {
 			String maven = null;
 
 			while (reader.hasNext()) {
+				if (reader.peek() != JsonToken.NAME) {
+					reader.skipValue();
+					continue;
+				}
                 switch (reader.nextName()) {
                     case "version" -> {
                         if (reader.peek() != JsonToken.STRING) {
