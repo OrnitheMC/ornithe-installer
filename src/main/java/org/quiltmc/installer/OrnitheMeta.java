@@ -50,11 +50,19 @@ public final class OrnitheMeta {
 			List<Map<String, String>> libraries = new ArrayList<>();
 			Map<String, Object> map = (Map<String, Object>) Gsons.read(reader);
 			List<Map<String, String>> json = (List<Map<String, String>>) map.get("libraries");
-			json.forEach(s -> {
-				if (s.get("url").equals("https://libraries.minecraft.net/")){
-					libraries.add(s);
+			// libs are listed in order, so ornithe's are last
+			// skip all libs until the Loader dep is reached
+			boolean skipLib = true;
+			for (Map<String, String> lib : json) {
+				if (!skipLib) {
+					libraries.add(lib);
+				} else {
+					String name = lib.get("name");
+					if (name.startsWith("net.fabricmc:fabric-loader:") || name.startsWith("org.quiltmc:quilt-loader:")) {
+						skipLib = false;
+					}
 				}
-			});
+			}
 			return libraries;
 		});
 	}
