@@ -8,7 +8,7 @@ use dirs::home_dir;
 // Warning: Untested
 
 pub const PLATFORM_JAVA_EXECUTABLE_NAME: &str = "java";
-pub const INSTALLER_JRE_HELP_URL: &str = "https://quiltmc.org"; // TODO: Fill in URL
+pub const INSTALLER_JRE_HELP_URL: &str = "https://ornithemc.net"; // TODO: Fill in URL
 
 pub(crate) fn get_host_jre_locations() -> io::Result<Vec<PathBuf>> {
 	// macOS will store all the jvms inside of `/Library/Java/JavaVirtualMachines/`

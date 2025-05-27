@@ -49,7 +49,7 @@ public abstract class Action<M> {
 
 		private void printHelp() {
 			// TODO: Detect the platform's executable name
-			String platformExecutableName = "quilt-installer";
+			String platformExecutableName = "ornithe-installer";
 
 			InputStream usageStream = Action.class.getClassLoader().getResourceAsStream("lang/" + Locale.getDefault().toLanguageTag() + ".usage");
 
