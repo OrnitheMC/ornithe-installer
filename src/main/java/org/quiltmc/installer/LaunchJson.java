@@ -48,11 +48,9 @@ public final class LaunchJson {
 								"name",clientName
 						);
 
+						// remove lwjgl as it is handled separately by the pack generator
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
-						vanillaLibraries.removeIf(lib -> {
-							String name = lib.get("name");
-							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
-						});
+						vanillaLibraries.removeIf(lib -> lib.get("name").contains("org.lwjgl"));
 
 						List<String> traits = new ArrayList<>();
 						if (((String) vanillaMap.get("mainClass")).contains("launchwrapper")) {
@@ -163,6 +161,11 @@ public final class LaunchJson {
 				// we use a different version manifest than mojang and
 				// some version ids can differ from the official ones
 				map.put("id", String.format("%s-vanilla", gameVersion.id()));
+
+				// remove ASM from the libraries, as it will conflict
+				// with Loader's ASM dependency!
+				List<Map<String, String>> libs = (List<Map<String, String>>) map.get("libraries");
+				libs.removeIf(lib -> lib.get("name").contains("org.ow2.asm"));
 
 				StringWriter writer = new StringWriter();
 				Gsons.write(JsonWriter.json(writer), map);
