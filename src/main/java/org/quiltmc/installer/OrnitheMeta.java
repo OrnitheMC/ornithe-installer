@@ -40,30 +40,9 @@ public final class OrnitheMeta {
 	public static final Endpoint<List<String>> QUILT_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/quilt-loader");
 
 	@SuppressWarnings("unchecked")
-	public static Endpoint<List<Map<String, String>>> profileLibrariesEndpoint(String version, LoaderType type, String loaderVersion){
-		String loader = switch (type){
-			case FABRIC -> "fabric-loader";
-			case QUILT -> "quilt-loader";
-		};
-		return new Endpoint<>(String.format("/v3/versions/%s/%s/%s/profile/json", loader, version, loaderVersion), reader -> {
-
-			List<Map<String, String>> libraries = new ArrayList<>();
-			Map<String, Object> map = (Map<String, Object>) Gsons.read(reader);
-			List<Map<String, String>> json = (List<Map<String, String>>) map.get("libraries");
-			// libs are listed in order, so ornithe's are last
-			// skip all libs until the Loader dep is reached
-			boolean skipLib = true;
-			for (Map<String, String> lib : json) {
-				if (!skipLib) {
-					libraries.add(lib);
-				} else {
-					String name = lib.get("name");
-					if (name.startsWith("net.fabricmc:fabric-loader:") || name.startsWith("org.quiltmc:quilt-loader:")) {
-						skipLib = false;
-					}
-				}
-			}
-			return libraries;
+	public static Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint(String gameVersion){
+		return new Endpoint<>(String.format("/v3/versions/libraries/%s", gameVersion), reader -> {
+			return (List<Map<String, String>>) Gsons.read(reader);
 		});
 	}
 

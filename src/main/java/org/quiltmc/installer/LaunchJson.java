@@ -235,6 +235,11 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
+			// we apply the library upgrades only to the Ornithe instance, not the Vanilla instance
+			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(gameVersion.id());
+			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(libraryUpgradesEndpoint)).join();
+			List<Map<String, String>> libraryUpgrades = meta.getEndpoint(libraryUpgradesEndpoint);
+
 			if (type == LoaderType.QUILT) {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
 				switch (loaderVersion) {
@@ -262,6 +267,8 @@ public final class LaunchJson {
 					library.replace("url", "https://maven.ornithemc.net/releases/");
 				}
 			}
+			libraries.addAll(libraryUpgrades);
+
 			StringWriter writer = new StringWriter();
 			try {
 				Gsons.write(JsonWriter.json(writer), map);

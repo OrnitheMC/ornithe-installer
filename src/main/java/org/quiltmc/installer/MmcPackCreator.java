@@ -151,7 +151,7 @@ public class MmcPackCreator {
 				"\"version\": \"%s\"" +
 				"}";
 		OrnitheMeta.Endpoint<List<Map<String, String>>> librariesEndpoint =
-				OrnitheMeta.profileLibrariesEndpoint(gameVersion, loaderType, loaderVersion);
+				OrnitheMeta.libraryUpgradesEndpoint(gameVersion);
 		OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(librariesEndpoint))
 				.join();
 
