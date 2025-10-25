@@ -140,7 +140,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	private static String addCommonLibraries(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
+	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
 		String patch = "{\"formatVersion\": 1, " +
 				"\"libraries\": " +
 				"[{\"name\": \"%s\"," +
@@ -226,7 +226,7 @@ public class MmcPackCreator {
 				Files.createDirectory(fs.getPath("patches"));
 				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
 				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
-				String packJsonWithLibraries = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
+				String packJsonWithLibraries = addLibraryUpgrades(fs.getPath("/"), gameVersion,
 						loaderType, loaderVersion, transformedPackJson);
 
 				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
