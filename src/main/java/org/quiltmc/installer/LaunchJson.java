@@ -151,11 +151,6 @@ public final class LaunchJson {
 				// some version ids can differ from the official ones
 				map.put("id", String.format("%s-vanilla", gameVersion.id()));
 
-				// remove ASM from the libraries, as it will conflict
-				// with Loader's ASM dependency!
-				List<Map<String, String>> libs = (List<Map<String, String>>) map.get("libraries");
-				libs.removeIf(lib -> lib.get("name").contains("org.ow2.asm"));
-
 				StringWriter writer = new StringWriter();
 				Gsons.write(JsonWriter.json(writer), map);
 
