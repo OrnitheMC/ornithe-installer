@@ -136,25 +136,14 @@ public final class LaunchJson {
 	 * @return the launch json for a vanilla mc instance
 	 */
 	public static CompletableFuture<String> get(VersionManifest.Version gameVersion) {
-		String rawUrl = String.format(VersionManifest.VERSION_META_URL, gameVersion.id());
-
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(rawUrl);
+				URL url = new URL(gameVersion.url());
 				URLConnection connection = Connections.openConnection(url);
 				Map<String, Object> map;
 
 				try (InputStreamReader input = new InputStreamReader(connection.getInputStream())) {
 					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
-				}
-
-				for (String rawManifestUrl : gameVersion.details().manifests()) {
-					URL manifestUrl = new URL(rawManifestUrl);
-					URLConnection manifestConnection = Connections.openConnection(manifestUrl);
-
-					try (InputStreamReader input = new InputStreamReader(manifestConnection.getInputStream())) {
-						buildVersionJsonFromManifest(map, (Map<String, Object>) Gsons.read(JsonReader.json(input)));
-					}
 				}
 
 				// add the -vanilla suffix to the vanilla json 'cause
@@ -177,32 +166,11 @@ public final class LaunchJson {
 		});
 	}
 
-	private static void buildVersionJsonFromManifest(Map<String, Object> versionJson, Map<String, Object> manifest) {
-		for (String key : manifest.keySet()) {
-			if (versionJson.containsKey(key)) {
-				Object versionJsonElement = versionJson.get(key);
-				Object manifestElement = manifest.get(key);
-
-				if (versionJsonElement.equals(manifestElement)) {
-					// version json already contains this element, continue
-				} else {
-					// check if elements are objects and combine them
-					if (versionJsonElement instanceof Map && manifestElement instanceof Map) {
-						buildVersionJsonFromManifest((Map<String, Object>) versionJsonElement, (Map<String, Object>) manifestElement);
-					}
-				}
-			} else {
-				// version json does not have this element yet; add it
-				versionJson.put(key, manifest.get(key));
-			}
-		}
-	}
-
 	/**
 	 * @return the launch json for a modded mc instance
 	 */
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion) {
-		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), type.getName(), gameVersion.id(side), loaderVersion);
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
+		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -240,7 +208,7 @@ public final class LaunchJson {
 			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(libraryUpgradesEndpoint)).join();
 			List<Map<String, String>> libraryUpgrades = meta.getEndpoint(libraryUpgradesEndpoint);
 
-			if (type == LoaderType.QUILT) {
+			if (loaderType == LoaderType.QUILT) {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
 				switch (loaderVersion) {
 					case "0.19.2", "0.19.3", "0.19.4" -> {
@@ -256,17 +224,9 @@ public final class LaunchJson {
 				}
 			}
 
-			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
-			for (Map<String, String> library : libraries) {
-				if (library.get("name").startsWith("net.fabricmc:intermediary")) {
-					library.replace("name", library.get("name").replace("net.fabricmc:intermediary", "net.ornithemc:calamus-intermediary"));
-					library.replace("url", "https://maven.ornithemc.net/releases/");
-				}
-				if (library.get("name").startsWith("org.quiltmc:hashed")) {
-					library.replace("name", library.get("name").replace("org.quiltmc:hashed", "net.ornithemc:calamus-intermediary"));
-					library.replace("url", "https://maven.ornithemc.net/releases/");
-				}
-			}
+			@SuppressWarnings("unchecked")
+			List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
+
 			libraries.addAll(libraryUpgrades);
 
 			StringWriter writer = new StringWriter();

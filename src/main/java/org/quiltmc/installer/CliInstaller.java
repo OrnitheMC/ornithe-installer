@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.action.Action;
@@ -147,11 +146,9 @@ public final class CliInstaller {
 					return Action.DISPLAY_HELP;
 				}
 
-				String intermediary = fetchIntermediary(GameSide.CLIENT, minecraftVersion);
-
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediary, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, null, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -166,7 +163,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -224,7 +221,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
+				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, null, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
 			}
 			case "server": {
 				if (split.size() < 1) {
@@ -247,7 +244,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, null, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, null, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -262,7 +259,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, loaderVersion, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, loaderVersion, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -319,7 +316,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installServer(minecraftVersion, loaderType, loaderVersion, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
+				return Action.installServer(minecraftVersion, loaderType, loaderVersion, null, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
 			}
 			default:
 				System.err.printf("Invalid side \"%s\", expected \"client\" or \"server\"%n", arg);
@@ -330,14 +327,6 @@ public final class CliInstaller {
 			System.err.printf("Invalid argument \"%s\"%n", arg);
 			return Action.DISPLAY_HELP;
 		}
-	}
-
-	private static String fetchIntermediary(GameSide side, String minecraftVersion) {
-		return OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Set.of(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT)).thenApply(meta -> {
-			VersionManifest manifest = VersionManifest.create().join();
-			VersionManifest.Version version = manifest.getVersion(minecraftVersion);
-			return meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).get(version.id(side));
-		}).join();
 	}
 
 	/**

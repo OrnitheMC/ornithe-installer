@@ -25,7 +25,6 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,8 +61,8 @@ public final class OrnitheMeta {
 	 *
 	 * <p>The returned map has the version as the key and the maven artifact as the value
 	 */
-	public static final Endpoint<Map<String, String>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v3/versions/intermediary", reader -> {
-		Map<String, String> ret = new LinkedHashMap<>();
+	public static final Endpoint<List<Intermediary>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v3/versions/intermediary", reader -> {
+		List<Intermediary> ret = new ArrayList<>();
 
 		if (reader.peek() != JsonToken.BEGIN_ARRAY) {
 			throw new ParseException("Intermediary versions must be in an array", reader);
@@ -111,7 +110,7 @@ public final class OrnitheMeta {
 				throw new ParseException("Intermediary version entry does not have a maven field", reader);
 			}
 
-			ret.put(version, maven);
+			ret.add(new Intermediary(version, maven));
 
 			reader.endObject();
 		}
