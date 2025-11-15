@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.CliInstaller;
+import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LauncherType;
 import org.quiltmc.installer.LoaderType;
 
@@ -90,12 +91,12 @@ public abstract class Action<M> {
 		return new ListVersions(loaderType, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, String intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
 		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, installDir, generateProfile, copyProfilePath);
 	}
 
-	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
-		return new InstallServer(minecraftVersion, loaderType, loaderVersion, installDir, createScripts, installServer);
+	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+		return new InstallServer(minecraftVersion, loaderType, loaderVersion, intermediary, installDir, createScripts, installServer);
 	}
 
 	static void println(String message) {
