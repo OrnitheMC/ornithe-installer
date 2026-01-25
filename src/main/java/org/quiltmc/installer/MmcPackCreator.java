@@ -39,21 +39,21 @@ public class MmcPackCreator {
 	//private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
 
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
-		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
-			try {
-				URL url = new URL(rawUrl);
-				URLConnection connection = Connections.openConnection(url);
+		VersionManifest.Version version = manifest.getVersion(gameVersion);
 
-				try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
-					String lwjglVersion = findLwjglVersion(reader);
+		try {
+			URL url = new URL(version.url());
+			URLConnection connection = Connections.openConnection(url);
 
-					if (lwjglVersion != null) {
-						return lwjglVersion;
-					}
+			try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
+				String lwjglVersion = findLwjglVersion(reader);
+
+				if (lwjglVersion != null) {
+					return lwjglVersion;
 				}
-			} catch (IOException e) {
-				throw new RuntimeException("issue while finding lwjgl version for Minecraft " + gameVersion, e);
 			}
+		} catch (IOException e) {
+			throw new RuntimeException("issue while finding lwjgl version for Minecraft " + gameVersion, e);
 		}
 
 		throw new RuntimeException("unable to find lwjgl version for Minecraft " + gameVersion);
@@ -140,7 +140,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
+	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
 		String patch = "{\"formatVersion\": 1, " +
 				"\"libraries\": " +
 				"[{\"name\": \"%s\"," +
@@ -151,7 +151,7 @@ public class MmcPackCreator {
 				"\"version\": \"%s\"" +
 				"}";
 		OrnitheMeta.Endpoint<List<Map<String, String>>> librariesEndpoint =
-				OrnitheMeta.libraryUpgradesEndpoint(gameVersion);
+				OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion);
 		OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(librariesEndpoint))
 				.join();
 
@@ -181,7 +181,7 @@ public class MmcPackCreator {
 
 	}
 
-	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath) {
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
 
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
@@ -191,9 +191,9 @@ public class MmcPackCreator {
 		String minecraftPatchPath = "patches/net.minecraft.json";
 
 		VersionManifest.Version version = manifest.getVersion(gameVersion);
-		String[] intermediaryParts = intermediaryInfo.split("[:]");
-		String intermediaryMaven = intermediaryParts[0] + ":" + intermediaryParts[1];
-		String intermediaryVersion = intermediaryParts[2];
+		String intermediaryMavenNotation = intermediary.getMavenNotation();
+		String intermediaryArtifact = intermediaryMavenNotation.substring(0, intermediaryMavenNotation.lastIndexOf(':'));
+		String intermediaryVersion = intermediary.getVersion();
 
 		try {
 			String lwjglVersion = findLwjglVersion(manifest, gameVersion);
@@ -204,7 +204,7 @@ public class MmcPackCreator {
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion)
 					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
-					.replaceAll("\\$\\{intermediary_maven}", intermediaryMaven);
+					.replaceAll("\\$\\{intermediary_maven}", intermediaryArtifact);
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion);
@@ -227,7 +227,7 @@ public class MmcPackCreator {
 				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
 				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
 				String packJsonWithLibraries = addLibraryUpgrades(fs.getPath("/"), gameVersion,
-						loaderType, loaderVersion, transformedPackJson);
+						loaderType, loaderVersion, intermediaryGen, intermediary, transformedPackJson);
 
 				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
 			}

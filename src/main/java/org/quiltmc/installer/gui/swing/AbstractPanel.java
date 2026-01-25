@@ -18,9 +18,10 @@ package org.quiltmc.installer.gui.swing;
 
 import java.awt.*;
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
@@ -34,6 +35,7 @@ import javax.swing.event.HyperlinkEvent;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
@@ -46,7 +48,7 @@ abstract class AbstractPanel extends JPanel {
 	@Nullable
 	private Map<LoaderType, List<String>> loaderVersions;
 	@Nullable
-	private Map<String, String> intermediaryVersions;
+	private Map<String, Intermediary> intermediaryVersions;
 
 	AbstractPanel(SwingInstaller gui) {
 		this.gui = gui;
@@ -60,10 +62,12 @@ abstract class AbstractPanel extends JPanel {
 		return rowPanel;
 	}
 
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
+	void receiveVersions(GameSide side, VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
 		this.manifest = manifest;
 		this.loaderVersions = loaderVersions;
-		this.intermediaryVersions = intermediaryVersions;
+		this.intermediaryVersions = intermediaryVersions.stream()
+				.filter(intermediary -> side.versionMatches(intermediary.getVersion()))
+				.collect(Collectors.toMap(intermediary -> side.stripFromVersion(intermediary.getVersion()), Function.identity()));
 	}
 
 	@Nullable
@@ -82,13 +86,13 @@ abstract class AbstractPanel extends JPanel {
 	}
 
 	@Nullable
-	public Map<String, String> intermediaryVersions() {
+	public Map<String, Intermediary> intermediaryVersions() {
 		return this.intermediaryVersions;
 	}
 
 	abstract LoaderType loaderType();
 
-	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Map<String, String> intermediaryVersions, boolean snapshots) {
+	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Map<String, Intermediary> intermediaryVersions, boolean snapshots) {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
@@ -98,8 +102,9 @@ abstract class AbstractPanel extends JPanel {
 						|| (version.type().equals("old_alpha") && snapshots)
 						|| (version.type().equals("alpha_server") && snapshots)
 						|| (version.type().equals("classic_server") && snapshots))
-				.filter(version -> intermediaryVersions.containsKey(version.id()) || intermediaryVersions.containsKey(version.id() + "-" + side.id()))
-				.map(VersionManifest.Version::id).forEachOrdered(comboBox::addItem);
+				.map(VersionManifest.Version::id)
+				.filter(intermediaryVersions::containsKey)
+				.forEachOrdered(comboBox::addItem);
 
 		comboBox.setEnabled(true);
 	}

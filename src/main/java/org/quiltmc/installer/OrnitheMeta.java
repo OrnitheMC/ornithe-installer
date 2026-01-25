@@ -25,7 +25,6 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,50 +35,16 @@ import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
 
 public final class OrnitheMeta {
-	public static final Endpoint<List<String>> FABRIC_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/fabric-loader");
-	public static final Endpoint<List<String>> QUILT_LOADER_VERSIONS_ENDPOINT = createVersion("/v3/versions/quilt-loader");
 
-	@SuppressWarnings("unchecked")
-	public static Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint(String gameVersion){
-		return new Endpoint<>(String.format("/v3/versions/libraries/%s", gameVersion), reader -> {
-			return (List<Map<String, String>>) Gsons.read(reader);
-		});
-	}
+	public static Endpoint<int[]> intermediaryGenerationsEndpoint() {
+		return deduplicate(new Endpoint<>("/intermediary_generations", reader -> {
+			int[] gens = new int[2];
 
-	public static Endpoint<List<String>> loaderVersionsEndpoint(LoaderType type) {
-		switch (type) {
-		case FABRIC:
-			return FABRIC_LOADER_VERSIONS_ENDPOINT;
-		case QUILT:
-			return QUILT_LOADER_VERSIONS_ENDPOINT;
-		}
-
-		throw new IllegalStateException("no endpoints for loader type " + type.getName());
-	}
-
-	/**
-	 * An endpoint for intermediary versions.
-	 *
-	 * <p>The returned map has the version as the key and the maven artifact as the value
-	 */
-	public static final Endpoint<Map<String, String>> INTERMEDIARY_VERSIONS_ENDPOINT = new Endpoint<>("/v3/versions/intermediary", reader -> {
-		Map<String, String> ret = new LinkedHashMap<>();
-
-		if (reader.peek() != JsonToken.BEGIN_ARRAY) {
-			throw new ParseException("Intermediary versions must be in an array", reader);
-		}
-
-		reader.beginArray();
-
-		while (reader.hasNext()) {
 			if (reader.peek() != JsonToken.BEGIN_OBJECT) {
-				throw new ParseException("Intermediary version entry must be an object", reader);
+				throw new ParseException("Intermediary generations must be an object", reader);
 			}
 
 			reader.beginObject();
-
-			String version = null;
-			String maven = null;
 
 			while (reader.hasNext()) {
 				if (reader.peek() != JsonToken.NAME) {
@@ -87,41 +52,125 @@ public final class OrnitheMeta {
 					continue;
 				}
                 switch (reader.nextName()) {
-                    case "version" -> {
-                        if (reader.peek() != JsonToken.STRING) {
-                            throw new ParseException("Version must be a string", reader);
+                    case "latestIntermediaryGeneration" -> {
+                        if (reader.peek() != JsonToken.NUMBER) {
+                            throw new ParseException("Version must be a number", reader);
                         }
-                        version = reader.nextString();
+                        gens[0] = reader.nextInt();
                     }
-                    case "maven" -> {
-                        if (reader.peek() != JsonToken.STRING) {
-                            throw new ParseException("maven must be a string", reader);
+                    case "stableIntermediaryGeneration" -> {
+                        if (reader.peek() != JsonToken.NUMBER) {
+                            throw new ParseException("maven must be a number", reader);
                         }
-                        maven = reader.nextString();
+                        gens[1] = reader.nextInt();
                     }
-                    case "stable" -> reader.nextBoolean(); // TODO
+                    default -> reader.skipValue();
                 }
 			}
 
-			if (version == null) {
-				throw new ParseException("Intermediary version entry does not have a version field", reader);
+			if (gens[0] == 0) {
+				throw new ParseException("Latest intermediary generation not found", reader);
 			}
 
-			if (maven == null) {
-				throw new ParseException("Intermediary version entry does not have a maven field", reader);
+			if (gens[1] == 0) {
+				throw new ParseException("Stable intermediary generation not found", reader);
 			}
-
-			ret.put(version, maven);
 
 			reader.endObject();
-		}
 
-		reader.endArray();
+			return gens;
+		}));
+	}
 
-		return ret;
-	});
+	@SuppressWarnings("unchecked")
+	public static Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint(int intermediaryGen, String gameVersion){
+		return deduplicate(new Endpoint<>(intermediaryGen, "/libraries/" + gameVersion, reader -> {
+			return (List<Map<String, String>>) Gsons.read(reader);
+		}));
+	}
+
+	public static Endpoint<List<String>> loaderVersionsEndpoint(int intermediaryGen, LoaderType type) {
+		return deduplicate(createVersion(intermediaryGen, "/" + type.getName() + "-loader"));
+	}
+
+	/**
+	 * An endpoint for intermediary versions.
+	 *
+	 * <p>The returned map has the version as the key and the maven artifact as the value
+	 */
+	public static final Endpoint<List<Intermediary>> intermediaryVersionsEndpoint(int intermediaryGen) {
+		return deduplicate(new Endpoint<>(intermediaryGen, "/intermediary", reader -> {
+			List<Intermediary> ret = new ArrayList<>();
+
+			if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+				throw new ParseException("Intermediary versions must be in an array", reader);
+			}
+
+			reader.beginArray();
+
+			while (reader.hasNext()) {
+				if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+					throw new ParseException("Intermediary version entry must be an object", reader);
+				}
+
+				reader.beginObject();
+
+				String version = null;
+				String maven = null;
+
+				while (reader.hasNext()) {
+					if (reader.peek() != JsonToken.NAME) {
+						reader.skipValue();
+						continue;
+					}
+	                switch (reader.nextName()) {
+	                    case "version" -> {
+	                        if (reader.peek() != JsonToken.STRING) {
+	                            throw new ParseException("Version must be a string", reader);
+	                        }
+	                        version = reader.nextString();
+	                    }
+	                    case "maven" -> {
+	                        if (reader.peek() != JsonToken.STRING) {
+	                            throw new ParseException("maven must be a string", reader);
+	                        }
+	                        maven = reader.nextString();
+	                    }
+	                    case "stable" -> reader.nextBoolean(); // TODO
+	                }
+				}
+
+				if (version == null) {
+					throw new ParseException("Intermediary version entry does not have a version field", reader);
+				}
+
+				if (maven == null) {
+					throw new ParseException("Intermediary version entry does not have a maven field", reader);
+				}
+
+				ret.add(new Intermediary(version, maven));
+
+				reader.endObject();
+			}
+
+			reader.endArray();
+
+			return ret;
+		}));
+	}
+
+	public static String launchJsonEndpointPath(GameSide side, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary) {
+		return "/v3/versions" + (intermediaryGen < 1 ? "" : ("/gen" + intermediaryGen)) + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Endpoint<T> deduplicate(Endpoint<T> endpoint) {
+		return (Endpoint<T>) ENDPOINTS.computeIfAbsent(endpoint.endpointPath, _key -> endpoint);
+	}
 
 	public static final String ORNITHE_META_URL = "https://meta.ornithemc.net";
+	private static final Map<String, Endpoint<?>> ENDPOINTS = new HashMap<>();
+
 	private final Map<Endpoint<?>, Object> endpoints;
 
 	public static CompletableFuture<OrnitheMeta> create(String baseMetaUrl, Set<Endpoint<?>> endpoints) {
@@ -157,8 +206,8 @@ public final class OrnitheMeta {
 		});
 	}
 
-	private static Endpoint<List<String>> createVersion(String endpointPath) {
-		return new Endpoint<>(endpointPath, reader -> {
+	private static Endpoint<List<String>> createVersion(int intermediaryGen, String endpointPath) {
+		return new Endpoint<>(intermediaryGen, endpointPath, reader -> {
 			if (reader.peek() != JsonToken.BEGIN_ARRAY) {
 				throw new ParseException("Result of endpoint must be an object", reader);
 			}
@@ -224,8 +273,12 @@ public final class OrnitheMeta {
 		private final String endpointPath;
 		private final ThrowingFunction<JsonReader, T, ParseException> deserializer;
 
+		Endpoint(int intermediaryGen, String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
+			this((intermediaryGen < 1 ? "" : ("/gen" + intermediaryGen)) + endpointPath, deserializer);
+		}
+
 		Endpoint(String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
-			this.endpointPath = endpointPath;
+			this.endpointPath = "/v3/versions" + endpointPath;
 			this.deserializer = deserializer;
 		}
 

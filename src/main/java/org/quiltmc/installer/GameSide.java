@@ -17,8 +17,8 @@
 package org.quiltmc.installer;
 
 public enum GameSide {
-	CLIENT("client", "/v3/versions/%s-loader/%s/%s/profile/json"),
-	SERVER("server", "/v3/versions/%s-loader/%s/%s/server/json");
+	CLIENT("client", "/%s-loader/%s/%s/profile/json"),
+	SERVER("server", "/%s-loader/%s/%s/server/json");
 
 	private final String id;
 	private final String launchJsonEndpoint;
@@ -34,5 +34,19 @@ public enum GameSide {
 
 	public String launchJsonEndpoint() {
 		return this.launchJsonEndpoint;
+	}
+
+	public String stripFromVersion(String version) {
+		return version.endsWith(this.id) ? version.substring(0, version.length() - (this.id.length() + 1)) : version;
+	}
+
+	public boolean versionMatches(String version) {
+		for (GameSide side : GameSide.values()) {
+			if (version.endsWith(side.id)) {
+				return side == this;
+			}
+		}
+
+		return true;
 	}
 }

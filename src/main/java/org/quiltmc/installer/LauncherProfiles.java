@@ -44,7 +44,7 @@ public final class LauncherProfiles {
 	 * @param loaderType the selected loader type
 	 * @throws IOException if there were any issues reading or writing
 	 */
-	public static void updateProfiles(Path gameDir, String name, String gameVersion, LoaderType loaderType) throws IOException {
+	public static void updateProfiles(Path gameDir, String name, String gameVersion, LoaderType loaderType, int intermediaryGen) throws IOException {
 		final Path launcherProfilesPath = gameDir.resolve("launcher_profiles.json");
 
 		if (Files.notExists(launcherProfilesPath)) {
@@ -69,7 +69,7 @@ public final class LauncherProfiles {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> profiles = (Map<String, Object>) rawProfiles;
-		String newProfileName = loaderType.getLocalizedName() + " " + gameVersion;
+		String newProfileName = "Ornithe Gen" + intermediaryGen + " " + loaderType.getLocalizedName() + " " + gameVersion;
 
 		// Modify the profile
 		if (profiles.containsKey(newProfileName)) {

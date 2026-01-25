@@ -31,6 +31,7 @@ import javax.swing.*;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
+import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.VersionManifest;
@@ -178,11 +179,10 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
-	@Override
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
-		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
+		super.receiveVersions(GameSide.SERVER, manifest, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
+		populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
 		updateFlags();
 		this.showSnapshotsCheckBox.setEnabled(true);
 		populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
@@ -215,12 +215,16 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 			return;
 		}
 
+		String minecraftVersion = (String) this.minecraftVersionSelector.getSelectedItem();
+		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LoaderType loaderType = this.loaderType();
 
 		InstallServer action = Action.installServer(
-				(String) this.minecraftVersionSelector.getSelectedItem(),
+				minecraftVersion,
 				loaderType,
-				(String) this.loaderVersionSelector.getSelectedItem(),
+				loaderVersion,
+				-1,
+				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateLaunchScripts,
 				this.downloadServer

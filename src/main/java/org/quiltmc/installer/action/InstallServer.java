@@ -53,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.Connections;
 import org.quiltmc.installer.GameSide;
 import org.quiltmc.installer.Gsons;
+import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LaunchJson;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Value;
@@ -69,16 +70,21 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
+	private final int intermediaryGen;
+	@Nullable
+	private final Intermediary intermediary;
 	private final String installDir;
 	private final boolean createScripts;
 	private final boolean installServer;
 	private MinecraftInstallation.InstallationInfo installationInfo;
 	private Path installedDir;
 
-	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, String installDir, boolean createScripts, boolean installServer) {
+	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
 		this.minecraftVersion = minecraftVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
+		this.intermediaryGen = intermediaryGen;
+		this.intermediary = intermediary;
 		this.installDir = installDir;
 		this.createScripts = createScripts;
 		this.installServer = installServer;
@@ -105,11 +111,11 @@ public final class InstallServer extends Action<InstallMessageType> {
 			println(String.format("Installing server launcher for %s with loader %s", this.minecraftVersion, this.loaderVersion));
 		}
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), this.loaderType, installationInfo.loaderVersion());
+			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.intermediaryGen(), installationInfo.intermediary(), this.loaderType, installationInfo.loaderVersion());
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 
@@ -229,12 +235,9 @@ public final class InstallServer extends Action<InstallMessageType> {
 		return CompletableFuture.supplyAsync(() -> {
 			// Get the info from the manifest
 			VersionManifest.Version version = info.manifest().getVersion(minecraftVersion);
-			// Not gonna be null cause we already validated this
-			@SuppressWarnings("ConstantConditions")
-			String rawUrl = version.url();
 
 			try {
-				URL url = new URL(rawUrl);
+				URL url = new URL(version.url());
 				URLConnection connection = Connections.openConnection(url);
 
 				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
