@@ -171,7 +171,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 			if (this.generateProfile) {
 				try {
 					println("Creating new profile");
-					LauncherProfiles.updateProfiles(this.installDirPath, profileName, this.minecraftVersion, loaderType);
+					LauncherProfiles.updateProfiles(this.installDirPath, profileName, this.minecraftVersion, this.loaderType, this.intermediaryGen);
 				} catch (IOException e) {
 					throw new UncheckedIOException(e); // Handle via exceptionally
 				}
