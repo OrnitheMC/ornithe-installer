@@ -219,7 +219,7 @@ public class MmcPackCreator {
 				transformedInstanceCfg += "\n" + "OverrideCommands=true" + "\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			Path zipFile = outPutDir.resolve("ornithe-gen" + intermediaryGen.orElseGet(IntermediaryGenerations::latest) + "-" + loaderType.getName() + "-" + gameVersion + ".zip");
+			Path zipFile = outPutDir.resolve("Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::latest) + " " + loaderType.getLocalizedName() + " " + gameVersion + ".zip");
 			Files.deleteIfExists(zipFile);
 
 			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
