@@ -70,6 +70,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
+	private final int intermediaryGen;
 	@Nullable
 	private final Intermediary intermediary;
 	private final String installDir;
@@ -78,10 +79,11 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private MinecraftInstallation.InstallationInfo installationInfo;
 	private Path installedDir;
 
-	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
 		this.minecraftVersion = minecraftVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
+		this.intermediaryGen = intermediaryGen;
 		this.intermediary = intermediary;
 		this.installDir = installDir;
 		this.createScripts = createScripts;
@@ -109,11 +111,11 @@ public final class InstallServer extends Action<InstallMessageType> {
 			println(String.format("Installing server launcher for %s with loader %s", this.minecraftVersion, this.loaderVersion));
 		}
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediary);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;
-			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.intermediary(), this.loaderType, installationInfo.loaderVersion());
+			return LaunchJson.get(GameSide.SERVER, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.intermediaryGen(), installationInfo.intermediary(), this.loaderType, installationInfo.loaderVersion());
 		}).thenCompose(launchJson -> {
 			println("Installing libraries");
 

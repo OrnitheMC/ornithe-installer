@@ -223,6 +223,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 				minecraftVersion,
 				loaderType,
 				loaderVersion,
+				-1,
 				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateLaunchScripts,

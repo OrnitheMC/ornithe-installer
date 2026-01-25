@@ -218,6 +218,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 				launcherType,
 				loaderType,
 				loaderVersion,
+				-1,
 				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateProfile,

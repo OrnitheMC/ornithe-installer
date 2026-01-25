@@ -18,7 +18,6 @@ package org.quiltmc.installer.action;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -39,8 +38,8 @@ public final class MinecraftInstallation {
 	 * @param loaderVersion the override for the loader version to use
 	 * @return a future containing the loader version to use
 	 */
-	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediaryVersion) {
-		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create().thenApply(manifest -> {
+	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediaryVersion) {
+		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create(intermediaryGen).thenApply(manifest -> {
 			if (manifest.getVersion(gameVersion) != null) {
 				return manifest;
 			}
@@ -49,8 +48,8 @@ public final class MinecraftInstallation {
 		});
 
 		Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
-		endpoints.add(OrnitheMeta.loaderVersionsEndpoint(loaderType));
-		endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+		endpoints.add(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, loaderType));
+		endpoints.add(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
 		CompletableFuture<OrnitheMeta> metaFuture = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints);
 
@@ -60,7 +59,7 @@ public final class MinecraftInstallation {
 				return intermediaryVersion;
 			}
 
-			List<Intermediary> intermediaryVersions = meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+			List<Intermediary> intermediaryVersions = meta.getEndpoint(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
 			for (Intermediary iv : intermediaryVersions) {
 				if (side.versionMatches(iv.getVersion()) && gameVersion.equals(side.stripFromVersion(iv.getVersion()))) {
@@ -72,7 +71,7 @@ public final class MinecraftInstallation {
 		});
 
 		CompletableFuture<String> loaderVersionFuture = metaFuture.thenApply(meta -> {
-			List<String> versions = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(loaderType));
+			List<String> versions = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, loaderType));
 
 			if (loaderVersion != null) {
 				if (!versions.contains(loaderVersion)) {
@@ -92,7 +91,7 @@ public final class MinecraftInstallation {
 
 		return CompletableFuture.allOf(versionManifest, intermediary, loaderVersionFuture).thenApply(_v -> {
 			try {
-				return new InstallationInfo(loaderVersionFuture.get(), intermediary.get(), versionManifest.get());
+				return new InstallationInfo(loaderVersionFuture.get(), intermediaryGen, intermediary.get(), versionManifest.get());
 			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
 			}
@@ -104,17 +103,23 @@ public final class MinecraftInstallation {
 
 	public static final class InstallationInfo {
 		private final String loaderVersion;
+		private final int intermediaryGen;
 		private final Intermediary intermediary;
 		private final VersionManifest manifest;
 
-		InstallationInfo(String loaderVersion, Intermediary intermediary, VersionManifest manifest) {
+		InstallationInfo(String loaderVersion, int intermediaryGen, Intermediary intermediary, VersionManifest manifest) {
 			this.loaderVersion = loaderVersion;
+			this.intermediaryGen = intermediaryGen;
 			this.intermediary = intermediary;
 			this.manifest = manifest;
 		}
 
 		public String loaderVersion() {
 			return this.loaderVersion;
+		}
+
+		public int intermediaryGen() {
+			return this.intermediaryGen;
 		}
 
 		public Intermediary intermediary() {

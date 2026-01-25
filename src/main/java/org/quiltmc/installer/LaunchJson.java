@@ -164,8 +164,8 @@ public final class LaunchJson {
 	/**
 	 * @return the launch json for a modded mc instance
 	 */
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
-		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, int intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
+		String rawUrl = OrnitheMeta.ORNITHE_META_URL + OrnitheMeta.launchJsonEndpointPath(side, loaderType, loaderVersion, intermediaryGen, intermediary);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -199,7 +199,7 @@ public final class LaunchJson {
 			}
 
 			// we apply the library upgrades only to the Ornithe instance, not the Vanilla instance
-			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(gameVersion.id());
+			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion.id());
 			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(libraryUpgradesEndpoint)).join();
 			List<Map<String, String>> libraryUpgrades = meta.getEndpoint(libraryUpgradesEndpoint);
 

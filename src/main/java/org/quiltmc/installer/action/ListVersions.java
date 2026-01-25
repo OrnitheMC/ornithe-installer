@@ -35,25 +35,27 @@ import org.quiltmc.installer.VersionManifest;
  */
 public final class ListVersions extends Action<Void> {
 	private final LoaderType loaderType;
+	private final int intermediaryGen;
 	/**
 	 * Whether to display snapshot Minecraft versions.
 	 */
 	private final boolean minecraftSnapshots;
 	private final boolean loaderBetas;
 
-	ListVersions(LoaderType loaderType, boolean minecraftSnapshots, boolean loaderBetas) {
+	ListVersions(LoaderType loaderType, int intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
 		this.loaderType = loaderType;
+		this.intermediaryGen = intermediaryGen;
 		this.minecraftSnapshots = minecraftSnapshots;
 		this.loaderBetas = loaderBetas;
 	}
 
 	@Override
 	public void run(Consumer<Void> statusTracker) {
-		CompletableFuture<Void> versionManifest = VersionManifest.create()
+		CompletableFuture<Void> versionManifest = VersionManifest.create(this.intermediaryGen)
 				.thenAccept(this::displayMinecraftVerions)
 				.exceptionally(this::handleMinecraftVersionExceptions);
 
-		CompletableFuture<Void> quiltMeta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(OrnitheMeta.loaderVersionsEndpoint(this.loaderType)))
+		CompletableFuture<Void> quiltMeta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(OrnitheMeta.loaderVersionsEndpoint(this.intermediaryGen, this.loaderType)))
 				.thenAccept(this::displayLoaderVersions)
 				.exceptionally(e -> {
 					e.printStackTrace();
@@ -75,7 +77,7 @@ public final class ListVersions extends Action<Void> {
 	}
 
 	private void displayLoaderVersions(OrnitheMeta meta) {
-		List<String> endpoint = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(this.loaderType));
+		List<String> endpoint = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(this.intermediaryGen, this.loaderType));
 		println(Localization.createFrom("cli.latest.loader.release", endpoint.stream().filter(version -> !version.contains("-")).findFirst().get()));
 
 		if (this.loaderBetas) {

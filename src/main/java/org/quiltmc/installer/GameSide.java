@@ -17,8 +17,8 @@
 package org.quiltmc.installer;
 
 public enum GameSide {
-	CLIENT("client", "/v3/versions/%s-loader/%s/%s/profile/json"),
-	SERVER("server", "/v3/versions/%s-loader/%s/%s/server/json");
+	CLIENT("client", "/%s-loader/%s/%s/profile/json"),
+	SERVER("server", "/%s-loader/%s/%s/server/json");
 
 	private final String id;
 	private final String launchJsonEndpoint;

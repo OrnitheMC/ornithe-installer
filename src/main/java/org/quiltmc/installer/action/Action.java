@@ -87,16 +87,16 @@ public abstract class Action<M> {
 		}
 	};
 
-	public static Action<Void> listVersions(LoaderType loaderType, boolean minecraftSnapshots, boolean loaderBetas) {
-		return new ListVersions(loaderType, minecraftSnapshots, loaderBetas);
+	public static Action<Void> listVersions(LoaderType loaderType, int intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
+		return new ListVersions(loaderType, intermediaryGen, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
-		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, installDir, generateProfile, copyProfilePath);
+	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, generateProfile, copyProfilePath);
 	}
 
-	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
-		return new InstallServer(minecraftVersion, loaderType, loaderVersion, intermediary, installDir, createScripts, installServer);
+	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+		return new InstallServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, createScripts, installServer);
 	}
 
 	static void println(String message) {

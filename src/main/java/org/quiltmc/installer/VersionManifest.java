@@ -36,15 +36,19 @@ import org.quiltmc.parsers.json.JsonToken;
  */
 // TODO: Abstract to another library for sharing logic with meta?
 public final class VersionManifest implements Collection<VersionManifest.Version> {
-	public static final String LAUNCHER_META_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
+	private static final String LAUNCHER_META_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
+	private static final String LAUNCHER_META_BY_GEN_URL = "https://ornithemc.net/mc-versions/gen2/version_manifest.json";
+
 	private final Version latestRelease;
 	private final Version latestSnapshot;
 	private final Map<String, Version> versions;
 
-	public static CompletableFuture<VersionManifest> create() {
+	public static CompletableFuture<VersionManifest> create(int intermediaryGen) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(LAUNCHER_META_URL);
+				URL url = new URL(intermediaryGen < 1
+					? LAUNCHER_META_URL
+					: String.format(LAUNCHER_META_BY_GEN_URL, intermediaryGen));
 				URLConnection connection = Connections.openConnection(url);
 
 				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);

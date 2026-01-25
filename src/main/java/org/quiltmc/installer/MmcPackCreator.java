@@ -140,7 +140,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
+	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
 		String patch = "{\"formatVersion\": 1, " +
 				"\"libraries\": " +
 				"[{\"name\": \"%s\"," +
@@ -151,7 +151,7 @@ public class MmcPackCreator {
 				"\"version\": \"%s\"" +
 				"}";
 		OrnitheMeta.Endpoint<List<Map<String, String>>> librariesEndpoint =
-				OrnitheMeta.libraryUpgradesEndpoint(gameVersion);
+				OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion);
 		OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(librariesEndpoint))
 				.join();
 
@@ -181,7 +181,7 @@ public class MmcPackCreator {
 
 	}
 
-	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
 
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
@@ -227,7 +227,7 @@ public class MmcPackCreator {
 				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
 				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
 				String packJsonWithLibraries = addLibraryUpgrades(fs.getPath("/"), gameVersion,
-						loaderType, loaderVersion, transformedPackJson);
+						loaderType, loaderVersion, intermediaryGen, intermediary, transformedPackJson);
 
 				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
 			}
