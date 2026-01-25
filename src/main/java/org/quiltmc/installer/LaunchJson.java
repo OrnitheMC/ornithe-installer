@@ -111,7 +111,8 @@ public final class LaunchJson {
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
-		moddedJsonMap.put("compatibleJavaMajors", List.of(8));
+		moddedJsonMap.put("compatibleJavaMajors", List.of(8, 17, 21, 25));
+		moddedJsonMap.put("compatibleJavaName", "java-runtime-epsilon");
 		moddedJsonMap.put("formatVersion", 1);
 		moddedJsonMap.put("libraries", modifiedLibraries);
 		moddedJsonMap.put("mainClass", vanilaMap.get("mainClass"));
