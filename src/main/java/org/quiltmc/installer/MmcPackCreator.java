@@ -207,6 +207,8 @@ public class MmcPackCreator {
 					.replaceAll("\\$\\{intermediary_maven}", intermediaryArtifact);
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
+					.replaceAll("\\$\\{intermediary_generation}", String.valueOf(intermediaryGen.orElseGet(IntermediaryGenerations::latest)))
+					.replaceAll("\\$\\{loader_type}", loaderType.getLocalizedName())
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
 			String transformedMinecraftJson = transformMinecraftJson(
@@ -217,7 +219,7 @@ public class MmcPackCreator {
 				transformedInstanceCfg += "\n" + "OverrideCommands=true" + "\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			Path zipFile = outPutDir.resolve("Ornithe-" + gameVersion + ".zip");
+			Path zipFile = outPutDir.resolve("ornithe-gen" + intermediaryGen.orElseGet(IntermediaryGenerations::latest) + "-" + loaderType.getName() + "-" + gameVersion + ".zip");
 			Files.deleteIfExists(zipFile);
 
 			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
