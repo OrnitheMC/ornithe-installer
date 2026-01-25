@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
@@ -87,15 +88,15 @@ public abstract class Action<M> {
 		}
 	};
 
-	public static Action<Void> listVersions(LoaderType loaderType, int intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
+	public static Action<Void> listVersions(LoaderType loaderType, OptionalInt intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
 		return new ListVersions(loaderType, intermediaryGen, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
 		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, generateProfile, copyProfilePath);
 	}
 
-	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
 		return new InstallServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, createScripts, installServer);
 	}
 

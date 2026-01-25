@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -70,7 +71,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
-	private final int intermediaryGen;
+	private final OptionalInt intermediaryGen;
 	@Nullable
 	private final Intermediary intermediary;
 	private final String installDir;
@@ -79,7 +80,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private MinecraftInstallation.InstallationInfo installationInfo;
 	private Path installedDir;
 
-	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
 		this.minecraftVersion = minecraftVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;

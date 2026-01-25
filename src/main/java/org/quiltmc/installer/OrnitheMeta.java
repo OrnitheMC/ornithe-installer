@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -83,13 +84,13 @@ public final class OrnitheMeta {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint(int intermediaryGen, String gameVersion){
+	public static Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint(OptionalInt intermediaryGen, String gameVersion){
 		return deduplicate(new Endpoint<>(intermediaryGen, "/libraries/" + gameVersion, reader -> {
 			return (List<Map<String, String>>) Gsons.read(reader);
 		}));
 	}
 
-	public static Endpoint<List<String>> loaderVersionsEndpoint(int intermediaryGen, LoaderType type) {
+	public static Endpoint<List<String>> loaderVersionsEndpoint(OptionalInt intermediaryGen, LoaderType type) {
 		return deduplicate(createVersion(intermediaryGen, "/" + type.getName() + "-loader"));
 	}
 
@@ -98,7 +99,7 @@ public final class OrnitheMeta {
 	 *
 	 * <p>The returned map has the version as the key and the maven artifact as the value
 	 */
-	public static final Endpoint<List<Intermediary>> intermediaryVersionsEndpoint(int intermediaryGen) {
+	public static final Endpoint<List<Intermediary>> intermediaryVersionsEndpoint(OptionalInt intermediaryGen) {
 		return deduplicate(new Endpoint<>(intermediaryGen, "/intermediary", reader -> {
 			List<Intermediary> ret = new ArrayList<>();
 
@@ -159,8 +160,8 @@ public final class OrnitheMeta {
 		}));
 	}
 
-	public static String launchJsonEndpointPath(GameSide side, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary) {
-		return "/v3/versions" + (intermediaryGen < 1 ? "" : ("/gen" + intermediaryGen)) + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
+	public static String launchJsonEndpointPath(GameSide side, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary) {
+		return "/v3/versions" + (intermediaryGen.isEmpty() ? "" : ("/gen" + intermediaryGen.getAsInt())) + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -206,7 +207,7 @@ public final class OrnitheMeta {
 		});
 	}
 
-	private static Endpoint<List<String>> createVersion(int intermediaryGen, String endpointPath) {
+	private static Endpoint<List<String>> createVersion(OptionalInt intermediaryGen, String endpointPath) {
 		return new Endpoint<>(intermediaryGen, endpointPath, reader -> {
 			if (reader.peek() != JsonToken.BEGIN_ARRAY) {
 				throw new ParseException("Result of endpoint must be an object", reader);
@@ -273,8 +274,8 @@ public final class OrnitheMeta {
 		private final String endpointPath;
 		private final ThrowingFunction<JsonReader, T, ParseException> deserializer;
 
-		Endpoint(int intermediaryGen, String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
-			this((intermediaryGen < 1 ? "" : ("/gen" + intermediaryGen)) + endpointPath, deserializer);
+		Endpoint(OptionalInt intermediaryGen, String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
+			this((intermediaryGen.isEmpty() ? "" : ("/gen" + intermediaryGen.getAsInt())) + endpointPath, deserializer);
 		}
 
 		Endpoint(String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {

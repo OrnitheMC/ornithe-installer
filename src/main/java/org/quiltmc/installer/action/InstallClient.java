@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -51,7 +52,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
-	private final int intermediaryGen;
+	private final OptionalInt intermediaryGen;
 	@Nullable
 	private final Intermediary intermediary;
 	@Nullable
@@ -60,7 +61,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 	private final boolean copyProfilePath;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
 		this.minecraftVersion = minecraftVersion;
 		this.launcherType = launcherType;
 		this.loaderType = loaderType;

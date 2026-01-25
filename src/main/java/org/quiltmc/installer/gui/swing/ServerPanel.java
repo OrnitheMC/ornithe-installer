@@ -22,6 +22,7 @@ import java.awt.event.ItemEvent;
 import java.nio.file.*;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -223,7 +224,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 				minecraftVersion,
 				loaderType,
 				loaderVersion,
-				-1,
+				OptionalInt.empty(),
 				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateLaunchScripts,

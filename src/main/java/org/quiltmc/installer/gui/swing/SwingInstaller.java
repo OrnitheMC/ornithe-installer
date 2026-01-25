@@ -48,6 +48,8 @@ public final class SwingInstaller extends JFrame {
 
 	private SwingInstaller() {
 		try {
+			OptionalInt intermediaryGen = OptionalInt.empty();
+
 			// Use a tabbed pane for client/server menus
 			JTabbedPane contentPane = new JTabbedPane(JTabbedPane.TOP);
 			contentPane.addTab(Localization.get("tab.client"), null, this.clientPanel = new ClientPanel(this), Localization.get("tab.client.tooltip"));
@@ -57,14 +59,14 @@ public final class SwingInstaller extends JFrame {
 			// Lookup loader and intermediary
 			Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
 			for (LoaderType type : LoaderType.values()) {
-				endpoints.add(OrnitheMeta.loaderVersionsEndpoint(-1, type));
+				endpoints.add(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, type));
 			}
-			endpoints.add(OrnitheMeta.intermediaryVersionsEndpoint(-1));
+			endpoints.add(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
-			OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(-1), ((quiltMeta, manifest) -> {
+			OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(intermediaryGen), ((quiltMeta, manifest) -> {
 				Map<LoaderType, List<String>> loaderVersions = new EnumMap<>(LoaderType.class);
 				for (LoaderType type : LoaderType.values()) {
-					loaderVersions.put(type, quiltMeta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(-1, type)).stream().filter(v -> {
+					loaderVersions.put(type, quiltMeta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, type)).stream().filter(v -> {
 						if (type != LoaderType.QUILT) {
 							return true;
 						}
@@ -73,7 +75,7 @@ public final class SwingInstaller extends JFrame {
 						return !(v.startsWith("0.16.0-beta.") && v.length() == 13 && v.charAt(12) != '9');
 					}).collect(Collectors.toList()));
 				}
-				List<Intermediary> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.intermediaryVersionsEndpoint(-1));
+				List<Intermediary> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
 				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
 				this.serverPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);

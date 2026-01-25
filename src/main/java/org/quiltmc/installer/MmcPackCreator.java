@@ -140,7 +140,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
+	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
 		String patch = "{\"formatVersion\": 1, " +
 				"\"libraries\": " +
 				"[{\"name\": \"%s\"," +
@@ -181,7 +181,7 @@ public class MmcPackCreator {
 
 	}
 
-	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, int intermediaryGen, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
 
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";

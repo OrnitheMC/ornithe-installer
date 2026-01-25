@@ -43,12 +43,12 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 	private final Version latestSnapshot;
 	private final Map<String, Version> versions;
 
-	public static CompletableFuture<VersionManifest> create(int intermediaryGen) {
+	public static CompletableFuture<VersionManifest> create(OptionalInt intermediaryGen) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(intermediaryGen < 1
+				URL url = new URL(intermediaryGen.isEmpty()
 					? LAUNCHER_META_URL
-					: String.format(LAUNCHER_META_BY_GEN_URL, intermediaryGen));
+					: String.format(LAUNCHER_META_BY_GEN_URL, intermediaryGen.getAsInt()));
 				URLConnection connection = Connections.openConnection(url);
 
 				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);

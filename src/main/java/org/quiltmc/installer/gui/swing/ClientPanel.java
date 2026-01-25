@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -218,7 +219,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 				launcherType,
 				loaderType,
 				loaderVersion,
-				-1,
+				OptionalInt.empty(),
 				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateProfile,

@@ -18,6 +18,7 @@ package org.quiltmc.installer.action;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +39,7 @@ public final class MinecraftInstallation {
 	 * @param loaderVersion the override for the loader version to use
 	 * @return a future containing the loader version to use
 	 */
-	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion, int intermediaryGen, @Nullable Intermediary intermediaryVersion) {
+	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediaryVersion) {
 		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create(intermediaryGen).thenApply(manifest -> {
 			if (manifest.getVersion(gameVersion) != null) {
 				return manifest;
@@ -103,11 +104,11 @@ public final class MinecraftInstallation {
 
 	public static final class InstallationInfo {
 		private final String loaderVersion;
-		private final int intermediaryGen;
+		private final OptionalInt intermediaryGen;
 		private final Intermediary intermediary;
 		private final VersionManifest manifest;
 
-		InstallationInfo(String loaderVersion, int intermediaryGen, Intermediary intermediary, VersionManifest manifest) {
+		InstallationInfo(String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, VersionManifest manifest) {
 			this.loaderVersion = loaderVersion;
 			this.intermediaryGen = intermediaryGen;
 			this.intermediary = intermediary;
@@ -118,7 +119,7 @@ public final class MinecraftInstallation {
 			return this.loaderVersion;
 		}
 
-		public int intermediaryGen() {
+		public OptionalInt intermediaryGen() {
 			return this.intermediaryGen;
 		}
 

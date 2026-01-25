@@ -164,7 +164,7 @@ public final class LaunchJson {
 	/**
 	 * @return the launch json for a modded mc instance
 	 */
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, int intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, OptionalInt intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
 		String rawUrl = OrnitheMeta.ORNITHE_META_URL + OrnitheMeta.launchJsonEndpointPath(side, loaderType, loaderVersion, intermediaryGen, intermediary);
 
 		return CompletableFuture.supplyAsync(() -> {

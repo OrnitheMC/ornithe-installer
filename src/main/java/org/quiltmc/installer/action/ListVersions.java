@@ -20,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
@@ -35,14 +36,14 @@ import org.quiltmc.installer.VersionManifest;
  */
 public final class ListVersions extends Action<Void> {
 	private final LoaderType loaderType;
-	private final int intermediaryGen;
+	private final OptionalInt intermediaryGen;
 	/**
 	 * Whether to display snapshot Minecraft versions.
 	 */
 	private final boolean minecraftSnapshots;
 	private final boolean loaderBetas;
 
-	ListVersions(LoaderType loaderType, int intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
+	ListVersions(LoaderType loaderType, OptionalInt intermediaryGen, boolean minecraftSnapshots, boolean loaderBetas) {
 		this.loaderType = loaderType;
 		this.intermediaryGen = intermediaryGen;
 		this.minecraftSnapshots = minecraftSnapshots;

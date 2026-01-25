@@ -19,6 +19,7 @@ package org.quiltmc.installer;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Queue;
 
 import org.jetbrains.annotations.Nullable;
@@ -77,7 +78,7 @@ public final class CliInstaller {
 
 			String rawType = split.remove();
 			LoaderType type = LoaderType.of(rawType);
-			int intermediaryGen = -1;
+			OptionalInt intermediaryGen = OptionalInt.empty();
 
 			if (type == null) {
 				System.err.println("Unknown loader type: " + rawType);
@@ -120,12 +121,14 @@ public final class CliInstaller {
 						return Action.DISPLAY_HELP;
 					}
 
-					intermediaryGen = Integer.parseInt(value);
+					int gen = Integer.parseInt(value);
 
-					if (intermediaryGen < 1 || intermediaryGen > IntermediaryGenerations.latest()) {
-						System.err.println("Option \"--intermediary-generation\" value \"" + intermediaryGen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+					if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+						System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
 						return Action.DISPLAY_HELP;
 					}
+
+					intermediaryGen = OptionalInt.of(gen);
 				} else {
 					System.err.printf("Unexpected additional argument \"%s\"%n", arg);
 					hasError = true;
@@ -162,7 +165,7 @@ public final class CliInstaller {
 				String rawLoaderType = split.remove();
 				LauncherType launcherType = LauncherType.of(rawLauncherType);
 				LoaderType loaderType = LoaderType.of(rawLoaderType);
-				int intermediaryGen = -1;
+				OptionalInt intermediaryGen = OptionalInt.empty();
 
 				if (launcherType == null) {
 					System.err.println("Unknown launcher type: " + rawLauncherType);
@@ -260,12 +263,14 @@ public final class CliInstaller {
 							return Action.DISPLAY_HELP;
 						}
 
-						intermediaryGen = Integer.parseInt(value);
+						int gen = Integer.parseInt(value);
 
-						if (intermediaryGen < 1 || intermediaryGen > IntermediaryGenerations.latest()) {
-							System.err.println("Option \"--intermediary-generation\" value \"" + intermediaryGen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+						if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+							System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
 							return Action.DISPLAY_HELP;
 						}
+
+						intermediaryGen = OptionalInt.of(gen);
 					} else {
 						System.err.printf("Invalid option %s%n", option);
 						return Action.DISPLAY_HELP;
@@ -287,7 +292,7 @@ public final class CliInstaller {
 				String minecraftVersion = split.remove();
 				String rawLoaderType = split.remove();
 				LoaderType loaderType = LoaderType.of(rawLoaderType);
-				int intermediaryGen = -1;
+				OptionalInt intermediaryGen = OptionalInt.empty();
 
 				if (loaderType == null) {
 					System.err.println("Unknown loader type: " + rawLoaderType);
@@ -380,12 +385,14 @@ public final class CliInstaller {
 							return Action.DISPLAY_HELP;
 						}
 
-						intermediaryGen = Integer.parseInt(value);
+						int gen = Integer.parseInt(value);
 
-						if (intermediaryGen < 1 || intermediaryGen > IntermediaryGenerations.latest()) {
-							System.err.println("Option \"--intermediary-generation\" value \"" + intermediaryGen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+						if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+							System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
 							return Action.DISPLAY_HELP;
 						}
+
+						intermediaryGen = OptionalInt.of(gen);
 					} else {
 						System.err.printf("Invalid option %s%n", option);
 						return Action.DISPLAY_HELP;
