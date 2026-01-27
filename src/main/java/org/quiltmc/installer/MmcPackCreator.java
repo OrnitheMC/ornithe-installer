@@ -212,7 +212,7 @@ public class MmcPackCreator {
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
 			String transformedMinecraftJson = transformMinecraftJson(
-					LaunchJson.getMmcJson(version).join(), lwjglVersion
+					LaunchJson.getMmcJson(version, intermediaryGen, intermediary, loaderType, loaderVersion).join(), lwjglVersion
 			);
 
 			if (IS_LINUX_LIKE_OS) {
