@@ -70,7 +70,7 @@ public final class LauncherProfiles {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> profiles = (Map<String, Object>) rawProfiles;
-		String newProfileName = "Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::latest) + " " + loaderType.getLocalizedName() + " " + gameVersion;
+		String newProfileName = "Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::stable) + " " + loaderType.getLocalizedName() + " " + gameVersion;
 
 		// Modify the profile
 		if (profiles.containsKey(newProfileName)) {

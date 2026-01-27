@@ -207,7 +207,7 @@ public class MmcPackCreator {
 					.replaceAll("\\$\\{intermediary_maven}", intermediaryArtifact);
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
-					.replaceAll("\\$\\{intermediary_generation}", String.valueOf(intermediaryGen.orElseGet(IntermediaryGenerations::latest)))
+					.replaceAll("\\$\\{intermediary_generation}", String.valueOf(intermediaryGen.orElseGet(IntermediaryGenerations::stable)))
 					.replaceAll("\\$\\{loader_type}", loaderType.getLocalizedName())
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
@@ -219,7 +219,7 @@ public class MmcPackCreator {
 				transformedInstanceCfg += "\n" + "OverrideCommands=true" + "\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			Path zipFile = outPutDir.resolve("Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::latest) + " " + loaderType.getLocalizedName() + " " + gameVersion + ".zip");
+			Path zipFile = outPutDir.resolve("Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::stable) + " " + loaderType.getLocalizedName() + " " + gameVersion + ".zip");
 			Files.deleteIfExists(zipFile);
 
 			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
