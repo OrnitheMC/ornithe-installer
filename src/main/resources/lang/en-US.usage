@@ -16,6 +16,9 @@ The loader version argument specifies the version of loader to install.
 
 where version options include:
 
+    --intermediary-generation
+                  Sets the Calamus (intermediary) generation used for the installation.				
+
    --snapshots
                   Additionally list latest snapshot Minecraft version.
 
