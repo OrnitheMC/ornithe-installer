@@ -43,10 +43,12 @@ public final class LaunchJson {
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
-						Map<String, Object> mainJar = Map.of(
-								"downloads", Map.of("artifact",client),
-								"name",clientName
-						);
+						Map<String, Object> mainJar = new HashMap<String, Object>() {{
+							put("downloads", new HashMap<String, Object>() {{
+								put("artifact", client);
+							}});
+							put("name", clientName);
+						}};
 
 						// remove lwjgl as it is handled separately by the pack generator
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
@@ -111,7 +113,7 @@ public final class LaunchJson {
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
-		moddedJsonMap.put("compatibleJavaMajors", List.of(8, 17, 21, 25));
+		moddedJsonMap.put("compatibleJavaMajors", Arrays.asList(8, 17, 21, 25));
 		moddedJsonMap.put("compatibleJavaName", "java-runtime-epsilon");
 		moddedJsonMap.put("formatVersion", 1);
 		moddedJsonMap.put("libraries", modifiedLibraries);
@@ -120,12 +122,12 @@ public final class LaunchJson {
 		moddedJsonMap.put("minecraftArguments", minecraftArguments);
 		moddedJsonMap.put("name", "Minecraft");
 		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
-		moddedJsonMap.put("requires",List.of(
-				Map.of(
-						"suggests", "${lwjgl_version}",
-						"uid", "${lwjgl_uid}"
-				)
-		));
+		moddedJsonMap.put("requires", Collections.singletonList(
+                new HashMap<String, String>() {{
+                        put("suggests","${lwjgl_version}");
+						put("uid","${lwjgl_uid}");
+				}}
+        ));
 		moddedJsonMap.put("type", vanilaMap.get("type"));
 		moddedJsonMap.put("uid", "net.minecraft");
 		moddedJsonMap.put("version", gameVersion);
@@ -144,7 +146,8 @@ public final class LaunchJson {
 				Map<String, Object> map;
 
 				try (InputStreamReader input = new InputStreamReader(connection.getInputStream())) {
-					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
+                    //noinspection unchecked
+                    map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
 				}
 
 				// add the -vanilla suffix to the vanilla json 'cause
@@ -199,6 +202,10 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
+			if (map == null) {
+				throw new RuntimeException("Read meta json is null?");
+			}
+
 			// we apply the library upgrades only to the Ornithe instance, not the Vanilla instance
 			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion.id());
 			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(libraryUpgradesEndpoint)).join();
@@ -207,16 +214,10 @@ public final class LaunchJson {
 			if (loaderType == LoaderType.QUILT) {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
 				switch (loaderVersion) {
-					case "0.19.2", "0.19.3", "0.19.4" -> {
-						@SuppressWarnings("unchecked")
-						Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
-						arguments
-								.computeIfAbsent("jvm", (key) -> new ArrayList<>())
-								.add("-Dloader.disable_beacon=true");
-					}
-					default -> {
-						// do nothing
-					}
+					case "0.19.2":
+                    case "0.19.4":
+                    case "0.19.3":
+                        disableBeacon(map);
 				}
 			}
 
@@ -233,6 +234,14 @@ public final class LaunchJson {
 			}
 			return writer.toString();
 		});
+	}
+
+	private static void disableBeacon(Map<?, ?> map) {
+		@SuppressWarnings("unchecked")
+		Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
+		arguments
+				.computeIfAbsent("jvm", (key) -> new ArrayList<>())
+				.add("-Dloader.disable_beacon=true");
 	}
 
 	private LaunchJson() {

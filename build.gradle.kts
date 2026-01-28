@@ -47,10 +47,9 @@ blossom {
 	replaceToken("__INSTALLER_VERSION", project.version)
 }
 
-tasks.compileJava {
-	sourceCompatibility = "1.8"
-	targetCompatibility = "1.8"
-}
+// Use this instead of compile task args cause this autoconfigures IDEs as well
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
 
 // Cannot use application for the time being because shadow does not like mainClass being set for some reason.
 // There is a PR which has fixed this, so update shadow probably when 6.10.1 or 6.11 is out
@@ -95,7 +94,6 @@ val copyForNative = tasks.register<Copy>("copyForNative") {
 		}
 	}
 }
-
 
 publishing {
 	publications {
