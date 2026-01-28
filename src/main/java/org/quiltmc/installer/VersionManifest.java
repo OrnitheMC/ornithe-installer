@@ -36,16 +36,19 @@ import org.quiltmc.parsers.json.JsonToken;
  */
 // TODO: Abstract to another library for sharing logic with meta?
 public final class VersionManifest implements Collection<VersionManifest.Version> {
-	public static final String LAUNCHER_META_URL = "https://skyrising.github.io/mc-versions/version_manifest.json";
-	public static final String VERSION_META_URL = "https://skyrising.github.io/mc-versions/version/manifest/%s.json";
+	private static final String LAUNCHER_META_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
+	private static final String LAUNCHER_META_BY_GEN_URL = "https://ornithemc.net/mc-versions/gen2/version_manifest.json";
+
 	private final Version latestRelease;
 	private final Version latestSnapshot;
 	private final Map<String, Version> versions;
 
-	public static CompletableFuture<VersionManifest> create() {
+	public static CompletableFuture<VersionManifest> create(OptionalInt intermediaryGen) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(LAUNCHER_META_URL);
+				URL url = new URL(intermediaryGen.isEmpty()
+					? LAUNCHER_META_URL
+					: String.format(LAUNCHER_META_BY_GEN_URL, intermediaryGen.getAsInt()));
 				URLConnection connection = Connections.openConnection(url);
 
 				InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
@@ -144,7 +147,6 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 			String url = null;
 			String time = null;
 			String releaseTime = null;
-			String details = null;
 
 			while (reader.hasNext()) {
 				String key = reader.nextName();
@@ -185,13 +187,6 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 
 					releaseTime = reader.nextString();
 					break;
-				case "details":
-					if (reader.peek() != JsonToken.STRING) {
-						throw new ParseException("Details url must be a string", reader);
-					}
-
-					details = reader.nextString();
-					break;
 				// v2 adds sha1 and complianceLevel, we do not need those
 				default:
 					reader.skipValue();
@@ -207,117 +202,11 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 			// always have this information in the manifest so we just ignore it
 //			if (time == null) throw new ParseException("Version time is required", reader);
 //			if (releaseTime == null) throw new ParseException("Version release time is required", reader);
-			if (details == null) throw new ParseException("Details url is required", reader);
 
-			versions.put(id, new Version(id, type, url, time, releaseTime, details));
+			versions.put(id, new Version(id, type, url, time, releaseTime));
 		}
 
 		reader.endArray();
-	}
-
-	private static VersionDetails readDetails(Version version) {
-		try {
-			URL url = new URL(version.detailsUrl);
-			URLConnection connection = url.openConnection();
-
-			InputStreamReader stream = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8);
-
-			try (JsonReader reader = JsonReader.json(new BufferedReader(stream))) {
-				return readDetails(version, reader);
-			}
-		} catch (IOException e) {
-			throw new UncheckedIOException(e); // Handled via .exceptionally(...)
-		}
-	}
-
-	private static VersionDetails readDetails(Version version, JsonReader reader) throws IOException, ParseException {
-		if (reader.peek() != JsonToken.BEGIN_OBJECT) {
-			throw new ParseException("Version Details was invalid type", reader);
-		}
-
-		List<String> manifests = null;
-		Boolean sharedMappings = null;
-		String normalizedVersion = null;
-
-		reader.beginObject();
-
-		while (reader.hasNext()) {
-			String key = reader.nextName();
-
-			switch (key) {
-			case "manifests":
-				if (reader.peek() != JsonToken.BEGIN_ARRAY) {
-					throw new ParseException("manifests must be an array", reader);
-				}
-
-				manifests = readManifests(version, reader);
-				break;
-			case "sharedMappings":
-				if (reader.peek() != JsonToken.BOOLEAN) {
-					throw new ParseException("sharedMappings must be a boolean", reader);
-				}
-
-				sharedMappings = reader.nextBoolean();
-				break;
-			case "normalizedVersion":
-				if(reader.peek() != JsonToken.STRING) {
-					throw new ParseException("normalizedVersion must be a string", reader);
-				}
-
-				normalizedVersion = reader.nextString();
-				break;
-			default:
-				reader.skipValue();
-			}
-		}
-
-		reader.endObject();
-
-		if (manifests == null) throw new ParseException("manifests is required", reader);
-		if (sharedMappings == null) throw new ParseException("sharedMappings is required", reader);
-		if (normalizedVersion == null) throw new ParseException("normalizedVersion is required", reader);
-
-		return new VersionDetails(version, normalizedVersion, manifests, sharedMappings);
-	}
-
-	private static List<String> readManifests(Version version, JsonReader reader) throws IOException, ParseException {
-		if (reader.peek() != JsonToken.BEGIN_ARRAY) {
-			throw new ParseException("Versions manifests must be in an array", reader);
-		}
-
-		List<String> manifests = new ArrayList<>();
-
-		reader.beginArray();
-
-		while (reader.hasNext()) {
-			if (reader.peek() != JsonToken.BEGIN_OBJECT) {
-				throw new ParseException("Version manifest entries must all be objects", reader);
-			}
-
-			reader.beginObject();
-
-			while (reader.hasNext()) {
-				String key = reader.nextName();
-
-				switch (key) {
-				case "url":
-					if (reader.peek() != JsonToken.STRING) {
-						throw new ParseException("Version url must be a string", reader);
-					}
-
-					manifests.add(reader.nextString());
-					break;
-				default:
-					reader.skipValue();
-				}
-			}
-
-			reader.endObject();
-		}
-
-		reader.endArray();
-
-		return Collections.unmodifiableList(manifests);
 	}
 
 	private VersionManifest(Version latestRelease, Version latestSnapshot, Map<String, Version> versions) {
@@ -437,25 +326,17 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 		private final String url;
 		private final String time;
 		private final String releaseTime;
-		private final String detailsUrl;
 
-		private VersionDetails details;
-
-		Version(String id, String type, String url, String time, String releaseTime, String details) {
+		Version(String id, String type, String url, String time, String releaseTime) {
 			this.id = id;
 			this.type = type;
 			this.url = url;
 			this.time = time;
 			this.releaseTime = releaseTime;
-			this.detailsUrl = details;
 		}
 
 		public String id() {
 			return this.id;
-		}
-
-		public String id(GameSide side) {
-			return this.details().sharedMappings() ? this.id : (this.id + "-" + side.id());
 		}
 
 		public String type() {
@@ -472,44 +353,6 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 
 		public String releaseTime() {
 			return this.releaseTime;
-		}
-
-		public VersionDetails details() {
-			if (this.details == null) {
-				this.details = readDetails(this);
-			}
-
-			return this.details;
-		}
-	}
-
-	public static final class VersionDetails {
-		private final Version version;
-		private final String normalizedVersion;
-		private final List<String> manifests;
-		private final boolean sharedMappings;
-
-		VersionDetails(Version version, String normalizedVersion, List<String> manifests, boolean sharedMappings) {
-			this.version = version;
-			this.normalizedVersion = normalizedVersion;
-			this.manifests = manifests;
-			this.sharedMappings = sharedMappings;
-		}
-
-		public Version version() {
-			return this.version;
-		}
-
-		public String normalizedVersion() {
-			return normalizedVersion;
-		}
-
-		public List<String> manifests() {
-			return this.manifests;
-		}
-
-		public boolean sharedMappings() {
-			return this.sharedMappings;
 		}
 	}
 }

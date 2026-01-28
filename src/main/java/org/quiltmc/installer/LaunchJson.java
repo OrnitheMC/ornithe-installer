@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class LaunchJson {
-	private static final List<String> BEACON_ISSUE_VERSIONS = Arrays.asList("0.19.2", "0.19.3", "0.19.4");
 
 	@SuppressWarnings("unchecked")
 	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion){
@@ -44,16 +43,14 @@ public final class LaunchJson {
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
-						Map<String, Object> mainJar = new HashMap<String, Object>() {{
-								put("downloads", new HashMap<Object, Object>(){{put("artifact", client);}});
-								put("name", clientName);
-							}};
+						Map<String, Object> mainJar = Map.of(
+								"downloads", Map.of("artifact",client),
+								"name",clientName
+						);
 
+						// remove lwjgl as it is handled separately by the pack generator
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
-						vanillaLibraries.removeIf(lib -> {
-							String name = lib.get("name");
-							return name.contains("org.ow2.asm") || name.contains("org.lwjgl");
-						});
+						vanillaLibraries.removeIf(lib -> lib.get("name").contains("org.lwjgl"));
 
 						List<String> traits = new ArrayList<>();
 						if (((String) vanillaMap.get("mainClass")).contains("launchwrapper")) {
@@ -114,7 +111,8 @@ public final class LaunchJson {
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
-		moddedJsonMap.put("compatibleJavaMajors", new ArrayList<Object>(){{add(8);}});
+		moddedJsonMap.put("compatibleJavaMajors", List.of(8, 17, 21, 25));
+		moddedJsonMap.put("compatibleJavaName", "java-runtime-epsilon");
 		moddedJsonMap.put("formatVersion", 1);
 		moddedJsonMap.put("libraries", modifiedLibraries);
 		moddedJsonMap.put("mainClass", vanilaMap.get("mainClass"));
@@ -122,12 +120,12 @@ public final class LaunchJson {
 		moddedJsonMap.put("minecraftArguments", minecraftArguments);
 		moddedJsonMap.put("name", "Minecraft");
 		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
-		moddedJsonMap.put("requires", new ArrayList<Object>() {{
-						add(new HashMap<Object, Object>() {{
-								put("suggests", "${lwjgl_version}");
-								put("uid", "${lwjgl_uid}");
-							}});
-					}});
+		moddedJsonMap.put("requires",List.of(
+				Map.of(
+						"suggests", "${lwjgl_version}",
+						"uid", "${lwjgl_uid}"
+				)
+		));
 		moddedJsonMap.put("type", vanilaMap.get("type"));
 		moddedJsonMap.put("uid", "net.minecraft");
 		moddedJsonMap.put("version", gameVersion);
@@ -139,25 +137,14 @@ public final class LaunchJson {
 	 * @return the launch json for a vanilla mc instance
 	 */
 	public static CompletableFuture<String> get(VersionManifest.Version gameVersion) {
-		String rawUrl = String.format(VersionManifest.VERSION_META_URL, gameVersion.id());
-
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(rawUrl);
+				URL url = new URL(gameVersion.url());
 				URLConnection connection = Connections.openConnection(url);
 				Map<String, Object> map;
 
 				try (InputStreamReader input = new InputStreamReader(connection.getInputStream())) {
 					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
-				}
-
-				for (String rawManifestUrl : gameVersion.details().manifests()) {
-					URL manifestUrl = new URL(rawManifestUrl);
-					URLConnection manifestConnection = Connections.openConnection(manifestUrl);
-
-					try (InputStreamReader input = new InputStreamReader(manifestConnection.getInputStream())) {
-						buildVersionJsonFromManifest(map, (Map<String, Object>) Gsons.read(JsonReader.json(input)));
-					}
 				}
 
 				// add the -vanilla suffix to the vanilla json 'cause
@@ -175,32 +162,11 @@ public final class LaunchJson {
 		});
 	}
 
-	private static void buildVersionJsonFromManifest(Map<String, Object> versionJson, Map<String, Object> manifest) {
-		for (String key : manifest.keySet()) {
-			if (versionJson.containsKey(key)) {
-				Object versionJsonElement = versionJson.get(key);
-				Object manifestElement = manifest.get(key);
-
-				if (versionJsonElement.equals(manifestElement)) {
-					// version json already contains this element, continue
-				} else {
-					// check if elements are objects and combine them
-					if (versionJsonElement instanceof Map && manifestElement instanceof Map) {
-						buildVersionJsonFromManifest((Map<String, Object>) versionJsonElement, (Map<String, Object>) manifestElement);
-					}
-				}
-			} else {
-				// version json does not have this element yet; add it
-				versionJson.put(key, manifest.get(key));
-			}
-		}
-	}
-
 	/**
 	 * @return the launch json for a modded mc instance
 	 */
-	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, LoaderType type, String loaderVersion) {
-		String rawUrl = OrnitheMeta.ORNITHE_META_URL + String.format(side.launchJsonEndpoint(), type.getName(), gameVersion.id(side), loaderVersion);
+	public static CompletableFuture<String> get(GameSide side, VersionManifest.Version gameVersion, OptionalInt intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion) {
+		String rawUrl = OrnitheMeta.ORNITHE_META_URL + OrnitheMeta.launchJsonEndpointPath(side, loaderType, loaderVersion, intermediaryGen, intermediary);
 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
@@ -233,28 +199,32 @@ public final class LaunchJson {
 				throw new UncheckedIOException(e); // Handled via .exceptionally(...)
 			}
 
-			if (type == LoaderType.QUILT) {
+			// we apply the library upgrades only to the Ornithe instance, not the Vanilla instance
+			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion.id());
+			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(libraryUpgradesEndpoint)).join();
+			List<Map<String, String>> libraryUpgrades = meta.getEndpoint(libraryUpgradesEndpoint);
+
+			if (loaderType == LoaderType.QUILT) {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
-				if (BEACON_ISSUE_VERSIONS.contains(loaderVersion)) {
-					@SuppressWarnings("unchecked")
-					Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
-					arguments
-							.computeIfAbsent("jvm", (key) -> new ArrayList<>())
-							.add("-Dloader.disable_beacon=true");
+				switch (loaderVersion) {
+					case "0.19.2", "0.19.3", "0.19.4" -> {
+						@SuppressWarnings("unchecked")
+						Map<String, List<Object>> arguments = (Map<String,List<Object>>)map.get("arguments");
+						arguments
+								.computeIfAbsent("jvm", (key) -> new ArrayList<>())
+								.add("-Dloader.disable_beacon=true");
+					}
+					default -> {
+						// do nothing
+					}
 				}
 			}
 
-			@SuppressWarnings("unchecked") List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
-			for (Map<String, String> library : libraries) {
-				if (library.get("name").startsWith("net.fabricmc:intermediary")) {
-					library.replace("name", library.get("name").replace("net.fabricmc:intermediary", "net.ornithemc:calamus-intermediary"));
-					library.replace("url", "https://maven.ornithemc.net/releases/");
-				}
-				if (library.get("name").startsWith("org.quiltmc:hashed")) {
-					library.replace("name", library.get("name").replace("org.quiltmc:hashed", "net.ornithemc:calamus-intermediary"));
-					library.replace("url", "https://maven.ornithemc.net/releases/");
-				}
-			}
+			@SuppressWarnings("unchecked")
+			List<Map<String, String>> libraries = (List<Map<String, String>>) map.get("libraries");
+
+			libraries.addAll(libraryUpgrades);
+
 			StringWriter writer = new StringWriter();
 			try {
 				Gsons.write(JsonWriter.json(writer), map);

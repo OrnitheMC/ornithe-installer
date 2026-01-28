@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -212,14 +213,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
-		VersionManifest.Version version = this.manifest().getVersion(minecraftVersion);
 
 		Action<InstallMessageType> action = Action.installClient(
 				minecraftVersion,
 				launcherType,
 				loaderType,
 				loaderVersion,
-				this.intermediaryVersions().get(version.id(GameSide.CLIENT)),
+				OptionalInt.empty(),
+				this.intermediaryVersions().get(minecraftVersion),
 				this.installLocation.getText(),
 				this.generateProfile,
 				this.copyProfilePath
@@ -259,11 +260,10 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
-	@Override
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, Map<String, String> intermediaryVersions) {
-		super.receiveVersions(manifest, loaderVersions, intermediaryVersions);
+	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
+		super.receiveVersions(GameSide.CLIENT, manifest, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, manifest, intermediaryVersions, this.showSnapshots);
+		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
 		this.showSnapshotsCheckBox.setEnabled(true);
 		populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);

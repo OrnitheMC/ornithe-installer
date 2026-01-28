@@ -15,7 +15,7 @@ val env = System.getenv()
 version = if (env["SNAPSHOTS_URL"] != null) {
 	"0-SNAPSHOT"
 } else {
-	"0.11.1"
+	"0.13.1"
 }
 
 base {

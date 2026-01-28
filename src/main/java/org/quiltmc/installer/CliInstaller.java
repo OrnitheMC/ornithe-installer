@@ -16,7 +16,11 @@
 
 package org.quiltmc.installer;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.OptionalInt;
+import java.util.Queue;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.action.Action;
@@ -66,7 +70,7 @@ public final class CliInstaller {
 		switch (arg) {
 		case "help":
 			return Action.DISPLAY_HELP;
-		case "listVersions":
+		case "listVersions": {
 			if (split.size() == 0) {
 				System.err.println("Loader type is required");
 				return Action.DISPLAY_HELP;
@@ -74,6 +78,7 @@ public final class CliInstaller {
 
 			String rawType = split.remove();
 			LoaderType type = LoaderType.of(rawType);
+			OptionalInt intermediaryGen = OptionalInt.empty();
 
 			if (type == null) {
 				System.err.println("Unknown loader type: " + rawType);
@@ -81,7 +86,7 @@ public final class CliInstaller {
 			}
 
 			if (split.size() == 0) {
-				return Action.listVersions(type, false, false);
+				return Action.listVersions(type, intermediaryGen, false, false);
 			}
 
 			boolean minecraftSnapshots = false;
@@ -98,13 +103,40 @@ public final class CliInstaller {
 				} else if (option.startsWith("--")) {
 					System.err.printf("Invalid option \"%s\"%n", arg);
 					hasError = true;
+				} else if (option.startsWith("--intermediary-generation")) {
+					if (option.indexOf('=') == -1) {
+						System.err.println("Option \"--intermediary-generation\" must specify a value");
+						return Action.DISPLAY_HELP;
+					}
+
+					if (!option.startsWith("--intermediary-generation=")) {
+						System.err.println("Option \"--intermediary-generation\" must have a equals sign (=) right after the option name to get the value");
+						return Action.DISPLAY_HELP;
+					}
+
+					String value = unqoute(option.substring(26));
+
+					if (value == null) {
+						System.err.println("Option \"--intermediary-generation\" must have value quoted at start and end of value");
+						return Action.DISPLAY_HELP;
+					}
+
+					int gen = Integer.parseInt(value);
+
+					if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+						System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+						return Action.DISPLAY_HELP;
+					}
+
+					intermediaryGen = OptionalInt.of(gen);
 				} else {
 					System.err.printf("Unexpected additional argument \"%s\"%n", arg);
 					hasError = true;
 				}
 			}
 
-			return !hasError ? Action.listVersions(type, minecraftSnapshots, loaderBetas) : Action.DISPLAY_HELP;
+			return !hasError ? Action.listVersions(type, intermediaryGen, minecraftSnapshots, loaderBetas) : Action.DISPLAY_HELP;
+		}
 		case "install":
 			if (split.size() == 0) {
 				System.err.println("Side is required: \"client\" or \"server\"");
@@ -133,6 +165,7 @@ public final class CliInstaller {
 				String rawLoaderType = split.remove();
 				LauncherType launcherType = LauncherType.of(rawLauncherType);
 				LoaderType loaderType = LoaderType.of(rawLoaderType);
+				OptionalInt intermediaryGen = OptionalInt.empty();
 
 				if (launcherType == null) {
 					System.err.println("Unknown launcher type: " + rawLauncherType);
@@ -143,11 +176,9 @@ public final class CliInstaller {
 					return Action.DISPLAY_HELP;
 				}
 
-				String intermediary = fetchIntermediary(GameSide.CLIENT, minecraftVersion);
-
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediary, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediaryGen, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -162,7 +193,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -214,13 +245,39 @@ public final class CliInstaller {
 						}
 
 						options.put("--install-dir", value);
+					} else if (option.startsWith("--intermediary-generation")) {
+						if (option.indexOf('=') == -1) {
+							System.err.println("Option \"--intermediary-generation\" must specify a value");
+							return Action.DISPLAY_HELP;
+						}
+
+						if (!option.startsWith("--intermediary-generation=")) {
+							System.err.println("Option \"--intermediary-generation\" must have a equals sign (=) right after the option name to get the value");
+							return Action.DISPLAY_HELP;
+						}
+
+						String value = unqoute(option.substring(26));
+
+						if (value == null) {
+							System.err.println("Option \"--intermediary-generation\" must have value quoted at start and end of value");
+							return Action.DISPLAY_HELP;
+						}
+
+						int gen = Integer.parseInt(value);
+
+						if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+							System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+							return Action.DISPLAY_HELP;
+						}
+
+						intermediaryGen = OptionalInt.of(gen);
 					} else {
 						System.err.printf("Invalid option %s%n", option);
 						return Action.DISPLAY_HELP;
 					}
 				}
 
-				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediary, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
+				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
 			}
 			case "server": {
 				if (split.size() < 1) {
@@ -235,6 +292,7 @@ public final class CliInstaller {
 				String minecraftVersion = split.remove();
 				String rawLoaderType = split.remove();
 				LoaderType loaderType = LoaderType.of(rawLoaderType);
+				OptionalInt intermediaryGen = OptionalInt.empty();
 
 				if (loaderType == null) {
 					System.err.println("Unknown loader type: " + rawLoaderType);
@@ -243,7 +301,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, null, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, null, intermediaryGen, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -258,7 +316,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, loaderVersion, null, false, false);
+					return Action.installServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -309,13 +367,39 @@ public final class CliInstaller {
 						}
 
 						options.put("--install-dir", value);
+					} else if (option.startsWith("--intermediary-generation")) {
+						if (option.indexOf('=') == -1) {
+							System.err.println("Option \"--intermediary-generation\" must specify a value");
+							return Action.DISPLAY_HELP;
+						}
+
+						if (!option.startsWith("--intermediary-generation=")) {
+							System.err.println("Option \"--intermediary-generation\" must have a equals sign (=) right after the option name to get the value");
+							return Action.DISPLAY_HELP;
+						}
+
+						String value = unqoute(option.substring(26));
+
+						if (value == null) {
+							System.err.println("Option \"--intermediary-generation\" must have value quoted at start and end of value");
+							return Action.DISPLAY_HELP;
+						}
+
+						int gen = Integer.parseInt(value);
+
+						if (gen < 1 || gen > IntermediaryGenerations.latest()) {
+							System.err.println("Option \"--intermediary-generation\" value \"" + gen + "\" is not valid! Value must be between 1 and " + IntermediaryGenerations.latest() + ".");
+							return Action.DISPLAY_HELP;
+						}
+
+						intermediaryGen = OptionalInt.of(gen);
 					} else {
 						System.err.printf("Invalid option %s%n", option);
 						return Action.DISPLAY_HELP;
 					}
 				}
 
-				return Action.installServer(minecraftVersion, loaderType, loaderVersion, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
+				return Action.installServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
 			}
 			default:
 				System.err.printf("Invalid side \"%s\", expected \"client\" or \"server\"%n", arg);
@@ -326,14 +410,6 @@ public final class CliInstaller {
 			System.err.printf("Invalid argument \"%s\"%n", arg);
 			return Action.DISPLAY_HELP;
 		}
-	}
-
-	private static String fetchIntermediary(GameSide side, String minecraftVersion) {
-		return OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, new HashSet<OrnitheMeta.Endpoint<?>>() {{add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);}}).thenApply(meta -> {
-			VersionManifest manifest = VersionManifest.create().join();
-			VersionManifest.Version version = manifest.getVersion(minecraftVersion);
-			return meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT).get(version.id(side));
-		}).join();
 	}
 
 	/**

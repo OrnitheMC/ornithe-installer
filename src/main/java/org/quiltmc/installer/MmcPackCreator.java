@@ -23,15 +23,14 @@ import org.quiltmc.parsers.json.JsonWriter;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.io.*;
-import java.net.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.*;
-import java.util.zip.*;
 
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
@@ -40,21 +39,21 @@ public class MmcPackCreator {
 	//private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
 
 	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
-		for (String rawUrl : manifest.getVersion(gameVersion).details().manifests()) {
-			try {
-				URL url = new URL(rawUrl);
-				URLConnection connection = Connections.openConnection(url);
+		VersionManifest.Version version = manifest.getVersion(gameVersion);
 
-				try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
-					String lwjglVersion = findLwjglVersion(reader);
+		try {
+			URL url = new URL(version.url());
+			URLConnection connection = Connections.openConnection(url);
 
-					if (lwjglVersion != null) {
-						return lwjglVersion;
-					}
+			try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
+				String lwjglVersion = findLwjglVersion(reader);
+
+				if (lwjglVersion != null) {
+					return lwjglVersion;
 				}
-			} catch (IOException e) {
-				throw new RuntimeException("issue while finding lwjgl version for Minecraft " + gameVersion, e);
 			}
+		} catch (IOException e) {
+			throw new RuntimeException("issue while finding lwjgl version for Minecraft " + gameVersion, e);
 		}
 
 		throw new RuntimeException("unable to find lwjgl version for Minecraft " + gameVersion);
@@ -141,7 +140,7 @@ public class MmcPackCreator {
 				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
 	}
 
-	private static String addCommonLibraries(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, String packJson) throws IOException {
+	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
 		String patch = "{\"formatVersion\": 1, " +
 				"\"libraries\": " +
 				"[{\"name\": \"%s\"," +
@@ -152,7 +151,7 @@ public class MmcPackCreator {
 				"\"version\": \"%s\"" +
 				"}";
 		OrnitheMeta.Endpoint<List<Map<String, String>>> librariesEndpoint =
-				OrnitheMeta.profileLibrariesEndpoint(gameVersion, loaderType, loaderVersion);
+				OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion);
 		OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Collections.singleton(librariesEndpoint))
 				.join();
 
@@ -168,13 +167,9 @@ public class MmcPackCreator {
 			String libName = name.substring(name.indexOf(':')+1, name.lastIndexOf(':'));
 			String version = name.substring(name.lastIndexOf(':')+1);
 
-			Files.write(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
-					String.format(patch, name, url, libName, uid, version).getBytes(StandardCharsets.UTF_8));
-			components.add(new HashMap<String, Object>() {{
-				put("cachedName", libName);
-				put("cachedVersion", version);
-				put("uid", uid);
-			}});
+			Files.writeString(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
+					String.format(patch, name, url, libName, uid, version));
+			components.add(Map.of("cachedName", libName,"cachedVersion", version,"uid", uid));
 		}
 
 
@@ -186,7 +181,7 @@ public class MmcPackCreator {
 
 	}
 
-	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, String intermediaryInfo, VersionManifest manifest, boolean copyProfilePath) {
+	public static void compileMmcZip(Path outPutDir, String gameVersion, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, VersionManifest manifest, boolean copyProfilePath) {
 
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
@@ -196,9 +191,9 @@ public class MmcPackCreator {
 		String minecraftPatchPath = "patches/net.minecraft.json";
 
 		VersionManifest.Version version = manifest.getVersion(gameVersion);
-		String[] intermediaryParts = intermediaryInfo.split("[:]");
-		String intermediaryMaven = intermediaryParts[0] + ":" + intermediaryParts[1];
-		String intermediaryVersion = intermediaryParts[2];
+		String intermediaryMavenNotation = intermediary.getMavenNotation();
+		String intermediaryArtifact = intermediaryMavenNotation.substring(0, intermediaryMavenNotation.lastIndexOf(':'));
+		String intermediaryVersion = intermediary.getVersion();
 
 		try {
 			String lwjglVersion = findLwjglVersion(manifest, gameVersion);
@@ -209,9 +204,11 @@ public class MmcPackCreator {
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion)
 					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
-					.replaceAll("\\$\\{intermediary_maven}", intermediaryMaven);
+					.replaceAll("\\$\\{intermediary_maven}", intermediaryArtifact);
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
+					.replaceAll("\\$\\{intermediary_generation}", String.valueOf(intermediaryGen.orElseGet(IntermediaryGenerations::stable)))
+					.replaceAll("\\$\\{loader_type}", loaderType.getLocalizedName())
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
 			String transformedMinecraftJson = transformMinecraftJson(
@@ -222,32 +219,19 @@ public class MmcPackCreator {
 				transformedInstanceCfg += "\n" + "OverrideCommands=true" + "\n" + ENV_WRAPPER_COMMAND;
 			}
 
-			Path zipFile = outPutDir.resolve("Ornithe-" + gameVersion + ".zip");
+			Path zipFile = outPutDir.resolve("Ornithe Gen" + intermediaryGen.orElseGet(IntermediaryGenerations::stable) + " " + loaderType.getLocalizedName() + " " + gameVersion + ".zip");
 			Files.deleteIfExists(zipFile);
 
-			// This is a god awful workaround, because paths can't be cleanly converted to URIs in j8, and for some reason, you can't pass parameters into newFileSystem with a path argument.
-			// Thanks Java :)
-			ZipOutputStream dummyZipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFile.toFile().toPath()));
-			// I need to put an entry inside, or it creates a 0-byte file, which filesystem doesn't like
-			dummyZipOutputStream.putNextEntry(new ZipEntry("mmc-pack.json"));
-			dummyZipOutputStream.write("if you see this, this didn't work".getBytes(StandardCharsets.UTF_8));
-			dummyZipOutputStream.closeEntry();
-			dummyZipOutputStream.close();
-			// End god awful workaround
-
-            //noinspection RedundantCast Don't remove the classloader cast unless you want to break builds
-            try (FileSystem fs = FileSystems.newFileSystem(zipFile, (ClassLoader) null)) {
+			try (FileSystem fs = FileSystems.newFileSystem(zipFile, Map.of("create", "true"))) {
 				Files.copy(MmcPackCreator.class.getResourceAsStream(examplePackDir + "/" + iconPath), fs.getPath(iconPath));
-				Files.write(fs.getPath(instanceCfgPath), transformedInstanceCfg.getBytes(StandardCharsets.UTF_8));
+				Files.writeString(fs.getPath(instanceCfgPath), transformedInstanceCfg);
 				Files.createDirectory(fs.getPath("patches"));
-				Files.write(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson.getBytes(StandardCharsets.UTF_8));
-				Files.write(fs.getPath(minecraftPatchPath), transformedMinecraftJson.getBytes(StandardCharsets.UTF_8));
-				String packJsonWithLibraries = addCommonLibraries(fs.getPath("/"), intermediaryVersion,
-						loaderType, loaderVersion, transformedPackJson);
+				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
+				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
+				String packJsonWithLibraries = addLibraryUpgrades(fs.getPath("/"), gameVersion,
+						loaderType, loaderVersion, intermediaryGen, intermediary, transformedPackJson);
 
-				// Remove the workaround file and replace it
-				Files.delete(fs.getPath(packJsonPath));
-				Files.write(fs.getPath(packJsonPath), packJsonWithLibraries.getBytes(StandardCharsets.UTF_8));
+				Files.writeString(fs.getPath(packJsonPath), packJsonWithLibraries);
 			}
 
 			if (copyProfilePath) {
@@ -266,7 +250,7 @@ public class MmcPackCreator {
 		for (int length; (length = resource.read(buffer)) != -1; ) {
 			os.write(buffer, 0, length);
 		}
-		return os.toString(StandardCharsets.UTF_8.name());
+		return os.toString(StandardCharsets.UTF_8);
 	}
 
 	static {

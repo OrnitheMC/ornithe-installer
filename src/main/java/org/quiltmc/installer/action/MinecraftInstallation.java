@@ -18,13 +18,14 @@ package org.quiltmc.installer.action;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.OrnitheMeta;
 import org.quiltmc.installer.VersionManifest;
@@ -38,8 +39,8 @@ public final class MinecraftInstallation {
 	 * @param loaderVersion the override for the loader version to use
 	 * @return a future containing the loader version to use
 	 */
-	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion) {
-		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create().thenApply(manifest -> {
+	public static CompletableFuture<InstallationInfo> getInfo(GameSide side, String gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediaryVersion) {
+		CompletableFuture<VersionManifest> versionManifest = VersionManifest.create(intermediaryGen).thenApply(manifest -> {
 			if (manifest.getVersion(gameVersion) != null) {
 				return manifest;
 			}
@@ -48,26 +49,30 @@ public final class MinecraftInstallation {
 		});
 
 		Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
-		endpoints.add(OrnitheMeta.loaderVersionsEndpoint(loaderType));
-		endpoints.add(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+		endpoints.add(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, loaderType));
+		endpoints.add(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
 		CompletableFuture<OrnitheMeta> metaFuture = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints);
 
 		// Verify we actually have intermediary for the specified version
-		CompletableFuture<Void> intermediary = versionManifest.thenCompose(manifest -> {
-			VersionManifest.Version version = manifest.getVersion(gameVersion);
+		CompletableFuture<Intermediary> intermediary = metaFuture.thenApply(meta -> {
+			if (intermediaryVersion != null) {
+				return intermediaryVersion;
+			}
 
-			return metaFuture.thenAccept(meta -> {
-				Map<String, String> intermediaryVersions = meta.getEndpoint(OrnitheMeta.INTERMEDIARY_VERSIONS_ENDPOINT);
+			List<Intermediary> intermediaryVersions = meta.getEndpoint(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
-				if (intermediaryVersions.get(version.id(side)) == null) {
-					throw new IllegalArgumentException(String.format("Minecraft version %s exists but has no intermediary", gameVersion));
+			for (Intermediary iv : intermediaryVersions) {
+				if (side.versionMatches(iv.getVersion()) && gameVersion.equals(side.stripFromVersion(iv.getVersion()))) {
+					return iv;
 				}
-			});
+			}
+
+			throw new IllegalArgumentException(String.format("Minecraft version %s exists but has no intermediary", gameVersion));
 		});
 
 		CompletableFuture<String> loaderVersionFuture = metaFuture.thenApply(meta -> {
-			List<String> versions = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(loaderType));
+			List<String> versions = meta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, loaderType));
 
 			if (loaderVersion != null) {
 				if (!versions.contains(loaderVersion)) {
@@ -87,7 +92,7 @@ public final class MinecraftInstallation {
 
 		return CompletableFuture.allOf(versionManifest, intermediary, loaderVersionFuture).thenApply(_v -> {
 			try {
-				return new InstallationInfo(loaderVersionFuture.get(), versionManifest.get());
+				return new InstallationInfo(loaderVersionFuture.get(), intermediaryGen, intermediary.get(), versionManifest.get());
 			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
 			}
@@ -99,15 +104,27 @@ public final class MinecraftInstallation {
 
 	public static final class InstallationInfo {
 		private final String loaderVersion;
+		private final OptionalInt intermediaryGen;
+		private final Intermediary intermediary;
 		private final VersionManifest manifest;
 
-		InstallationInfo(String loaderVersion, VersionManifest manifest) {
+		InstallationInfo(String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, VersionManifest manifest) {
 			this.loaderVersion = loaderVersion;
+			this.intermediaryGen = intermediaryGen;
+			this.intermediary = intermediary;
 			this.manifest = manifest;
 		}
 
 		public String loaderVersion() {
 			return this.loaderVersion;
+		}
+
+		public OptionalInt intermediaryGen() {
+			return this.intermediaryGen;
+		}
+
+		public Intermediary intermediary() {
+			return this.intermediary;
 		}
 
 		public VersionManifest manifest() {
