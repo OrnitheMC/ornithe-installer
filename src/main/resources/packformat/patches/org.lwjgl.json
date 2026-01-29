@@ -1,0 +1,7 @@
+{
+    "formatVersion": 1,
+    "name": "LWJGL ${lwjgl_major_ver}",
+    "type": "release",
+    "uid": "${lwjgl_uid}",
+    "version": "${lwjgl_version}"
+}

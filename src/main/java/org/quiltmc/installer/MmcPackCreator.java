@@ -35,10 +35,8 @@ import java.util.*;
 public class MmcPackCreator {
 	private static final String ENV_WRAPPER_COMMAND = "WrapperCommand=env __GL_THREADED_OPTIMIZATIONS=0";
 	private static final boolean IS_LINUX_LIKE_OS;
-	//private static final Semver VERSION_1_6 = new Semver("1.6.0-pre+06251516");
-	//private static final Semver VERSION_1_3 = new Semver("1.3.0-pre+07261249");
 
-	private static String findLwjglVersion(VersionManifest manifest, String gameVersion) {
+	private static LWJGL findLwjgl(VersionManifest manifest, String gameVersion) {
 		VersionManifest.Version version = manifest.getVersion(gameVersion);
 
 		try {
@@ -46,10 +44,10 @@ public class MmcPackCreator {
 			URLConnection connection = Connections.openConnection(url);
 
 			try (JsonReader reader = JsonReader.json(new BufferedReader(new InputStreamReader(connection.getInputStream())))) {
-				String lwjglVersion = findLwjglVersion(reader);
+				LWJGL lwjgl = findLwjgl(reader);
 
-				if (lwjglVersion != null) {
-					return lwjglVersion;
+				if (lwjgl != null) {
+					return lwjgl;
 				}
 			}
 		} catch (IOException e) {
@@ -59,7 +57,7 @@ public class MmcPackCreator {
 		throw new RuntimeException("unable to find lwjgl version for Minecraft " + gameVersion);
 	}
 
-	private static String findLwjglVersion(JsonReader reader) throws IOException, ParseException {
+	private static LWJGL findLwjgl(JsonReader reader) throws IOException, ParseException {
 		if (reader.peek() != JsonToken.BEGIN_OBJECT) {
 			throw new ParseException("Version Manifest was invalid type", reader);
 		}
@@ -82,6 +80,9 @@ public class MmcPackCreator {
 
 						reader.beginObject();
 
+						String lwjglVersion = null;
+						String lwjglUrl = null;
+
 						while (reader.hasNext()) {
 							switch (reader.nextName()) {
 								case "name":
@@ -95,7 +96,53 @@ public class MmcPackCreator {
 									String version = maven[2];
 
 									if (artifact.equals("lwjgl")) {
-										return version;
+										lwjglVersion = version;
+									}
+
+									break;
+								case "downloads":
+									if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+										reader.skipValue();
+									} else {
+										reader.beginObject();
+
+										while (reader.hasNext()) {
+											switch (reader.nextName()) {
+											case "artifact":
+												if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+													reader.skipValue();
+												} else {
+													reader.beginObject();
+
+													while (reader.hasNext()) {
+														switch (reader.nextName()) {
+														case "url":
+															if (reader.peek() != JsonToken.STRING) {
+																throw new ParseException("download artifact url must be a string", reader);
+															}
+
+															String url = reader.nextString();
+
+															if (url.contains("lwjgl")) {
+																lwjglUrl = url;
+															}
+
+															break;
+														default:
+															reader.skipValue();
+														}
+													}
+
+													reader.endObject();
+												}
+
+												break;
+											default:
+												reader.skipValue();
+											}
+										}
+
+										reader.endObject();
 									}
 
 									break;
@@ -105,6 +152,10 @@ public class MmcPackCreator {
 						}
 
 						reader.endObject();
+
+						if (lwjglVersion != null && lwjglUrl != null) {
+							return new LWJGL(lwjglVersion, lwjglUrl);
+						}
 					}
 
 					reader.endArray();
@@ -120,24 +171,22 @@ public class MmcPackCreator {
 		return null;
 	}
 
-	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, String lwjglVersion, String intermediaryVersion) {
-		String lwjglMajorVer = lwjglVersion.substring(0, 1);
+	private static String transformPackJson(String examplePackJson, String gameVersion, LoaderType type, String loaderVersion, LWJGL lwjgl, String intermediaryVersion) {
 		return examplePackJson
 				.replaceAll("\\$\\{mc_version}", gameVersion)
 				.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
 				.replaceAll("\\$\\{loader_version}", loaderVersion)
 				.replaceAll("\\$\\{loader_name}", type.getLocalizedName() + " Loader")
 				.replaceAll("\\$\\{loader_uid}", type.getMavenUid())
-				.replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
-				.replaceAll("\\$\\{lwjgl_major_ver}", lwjglMajorVer)
-				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
+				.replaceAll("\\$\\{lwjgl_version}", lwjgl.getVersion())
+				.replaceAll("\\$\\{lwjgl_major_ver}", lwjgl.getMajorVersion())
+				.replaceAll("\\$\\{lwjgl_uid}", lwjgl.getUid());
 	}
 
-	private static String transformMinecraftJson(String minecraftPatchString, String lwjglVersion) {
-		String lwjglMajorVer = lwjglVersion.substring(0, 1);
+	private static String transformMinecraftJson(String minecraftPatchString, LWJGL lwjgl) {
 		return minecraftPatchString
-				.replaceAll("\\$\\{lwjgl_version}", lwjglVersion)
-				.replaceAll("\\$\\{lwjgl_uid}", lwjglMajorVer.equals("3") ? "org.lwjgl3" : "org.lwjgl");
+				.replaceAll("\\$\\{lwjgl_version}", lwjgl.getVersion())
+				.replaceAll("\\$\\{lwjgl_uid}", lwjgl.getUid());
 	}
 
 	private static String addLibraryUpgrades(Path instanceZipRoot, String gameVersion, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary, String packJson) throws IOException {
@@ -186,6 +235,7 @@ public class MmcPackCreator {
 		String examplePackDir = "/packformat";
 		String packJsonPath = "mmc-pack.json";
 		String intermediaryJsonPath = "patches/net.fabricmc.intermediary.json";
+		String lwjglJsonPath = "patches/org.lwjgl.json";
 		String instanceCfgPath = "instance.cfg";
 		String iconPath = "ornithe.png";
 		String minecraftPatchPath = "patches/net.minecraft.json";
@@ -196,15 +246,20 @@ public class MmcPackCreator {
 		String intermediaryVersion = intermediary.getVersion();
 
 		try {
-			String lwjglVersion = findLwjglVersion(manifest, gameVersion);
+			LWJGL lwjgl = findLwjgl(manifest, gameVersion);
 
 			String transformedPackJson = transformPackJson(
-					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, lwjglVersion, intermediaryVersion
+					readResource(examplePackDir, packJsonPath), gameVersion, loaderType, loaderVersion, lwjgl, intermediaryVersion
 			);
 			String transformedIntermediaryJson = readResource(examplePackDir, intermediaryJsonPath)
 					.replaceAll("\\$\\{mc_version}", gameVersion)
 					.replaceAll("\\$\\{intermediary_ver}", intermediaryVersion)
 					.replaceAll("\\$\\{intermediary_maven}", intermediaryArtifact);
+
+			String transformedLwjglJson = readResource(examplePackDir, lwjglJsonPath)
+					.replaceAll("\\$\\{lwjgl_version}", lwjgl.getVersion())
+					.replaceAll("\\$\\{lwjgl_major_ver}", lwjgl.getMajorVersion())
+					.replaceAll("\\$\\{lwjgl_uid}", lwjgl.getUid());;
 
 			String transformedInstanceCfg = readResource(examplePackDir, instanceCfgPath)
 					.replaceAll("\\$\\{intermediary_generation}", String.valueOf(intermediaryGen.orElseGet(IntermediaryGenerations::stable)))
@@ -212,7 +267,7 @@ public class MmcPackCreator {
 					.replaceAll("\\$\\{mc_version}", gameVersion);
 
 			String transformedMinecraftJson = transformMinecraftJson(
-					LaunchJson.getMmcJson(version, intermediaryGen, intermediary, loaderType, loaderVersion).join(), lwjglVersion
+					LaunchJson.getMmcJson(version, intermediaryGen, intermediary, loaderType, loaderVersion).join(), lwjgl
 			);
 
 			if (IS_LINUX_LIKE_OS) {
@@ -227,6 +282,9 @@ public class MmcPackCreator {
 				Files.writeString(fs.getPath(instanceCfgPath), transformedInstanceCfg);
 				Files.createDirectory(fs.getPath("patches"));
 				Files.writeString(fs.getPath(intermediaryJsonPath), transformedIntermediaryJson);
+				if (lwjgl.isCustom()) {
+					Files.writeString(fs.getPath(lwjglJsonPath), transformedLwjglJson);
+				}
 				Files.writeString(fs.getPath(minecraftPatchPath), transformedMinecraftJson);
 				String packJsonWithLibraries = addLibraryUpgrades(fs.getPath("/"), gameVersion,
 						loaderType, loaderVersion, intermediaryGen, intermediary, transformedPackJson);
