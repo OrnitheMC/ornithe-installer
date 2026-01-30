@@ -33,11 +33,12 @@ import java.util.concurrent.CompletableFuture;
 public final class LaunchJson {
 
 	@SuppressWarnings("unchecked")
-	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion){
-		return LaunchJson.get(gameVersion).thenApply(
-				vanillaJson ->  {
+	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion, OptionalInt intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion){
+		return LaunchJson.get(gameVersion).thenCombine(LaunchJson.get(GameSide.CLIENT, gameVersion, intermediaryGen, intermediary, loaderType, loaderVersion),
+				(vanillaJson, moddedJson) -> {
 					try {
 						Map<String, Object> vanillaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
+						Map<String, Object> moddedMap = (Map<String, Object>) Gsons.read(JsonReader.json(moddedJson));
 
 						String clientName = "com.mojang:minecraft:" + gameVersion.id() + ":client";
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
@@ -81,11 +82,20 @@ public final class LaunchJson {
 							}
 						}
 
+						List<Object> jvmArguments = Collections.emptyList();
+						if (moddedMap.containsKey("arguments")) {
+							Map<String, Object> arguments =  ((Map<String, Object>) moddedMap.get("arguments"));
+
+							if (arguments.containsKey("jvm")) {
+								jvmArguments = (List<Object>) arguments.get("jvm");
+							}
+						}
+
 						StringWriter writer = new StringWriter();
 						Gsons.write(
 								JsonWriter.json(writer),
 								buildPackJsonMap(
-										vanillaMap, vanillaLibraries, minecraftArguments, traits, mainJar, gameVersion.id()
+										vanillaMap, vanillaLibraries, minecraftArguments, traits, jvmArguments, mainJar, gameVersion.id()
 								)
 						);
 
@@ -103,6 +113,7 @@ public final class LaunchJson {
 			List<Map<String, String>> modifiedLibraries,
 			String minecraftArguments,
 			List<String> traits,
+			List<Object> jvmArguments,
 			Map<String, Object> mainJar,
 			String gameVersion
 	){
@@ -110,6 +121,9 @@ public final class LaunchJson {
 
 		if(!traits.isEmpty()){
 			moddedJsonMap.put("+traits",traits);
+		}
+		if(!jvmArguments.isEmpty()){
+			moddedJsonMap.put("+jvmArgs",jvmArguments);
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
