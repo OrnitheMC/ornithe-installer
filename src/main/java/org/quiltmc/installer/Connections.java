@@ -34,7 +34,7 @@ public class Connections {
 
     public static URLConnection openConnection(URL url) throws IOException {
         URLConnection connection = url.openConnection();
-        connection.setRequestProperty("User-Agent", "Quilt-Installer/"+INSTALLER_VERSION);
+        connection.setRequestProperty("User-Agent", "Ornithe-Installer/"+INSTALLER_VERSION);
 
         return connection;
     }
