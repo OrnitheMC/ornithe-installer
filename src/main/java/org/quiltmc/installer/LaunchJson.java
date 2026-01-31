@@ -137,11 +137,11 @@ public final class LaunchJson {
 		moddedJsonMap.put("name", "Minecraft");
 		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
 		moddedJsonMap.put("requires", Lists.of(
-                Maps.of(
-                        "suggests", "${lwjgl_version}",
+				Maps.of(
+						"suggests", "${lwjgl_version}",
 						"uid", "${lwjgl_uid}"
 				)
-        ));
+		));
 		moddedJsonMap.put("type", vanilaMap.get("type"));
 		moddedJsonMap.put("uid", "net.minecraft");
 		moddedJsonMap.put("version", gameVersion);
@@ -160,8 +160,8 @@ public final class LaunchJson {
 				Map<String, Object> map;
 
 				try (InputStreamReader input = new InputStreamReader(connection.getInputStream())) {
-                    //noinspection unchecked
-                    map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
+					//noinspection unchecked
+					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
 				}
 
 				// add the -vanilla suffix to the vanilla json 'cause
@@ -229,9 +229,9 @@ public final class LaunchJson {
 				// Prevents a log warning about being unable to reach the active user beacon on stable versions.
 				switch (loaderVersion) {
 					case "0.19.2":
-                    case "0.19.4":
-                    case "0.19.3":
-                        disableBeacon(map);
+					case "0.19.4":
+					case "0.19.3":
+						disableBeacon(map);
 				}
 			}
 

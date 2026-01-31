@@ -225,7 +225,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
 			}
-        }).exceptionally(e -> {
+		}).exceptionally(e -> {
 			e.printStackTrace();
 			statusTracker.accept(InstallMessageType.FAIL);
 			return null;

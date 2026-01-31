@@ -39,7 +39,7 @@ public final class SwingInstaller extends JFrame {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (ClassNotFoundException | UnsupportedLookAndFeelException | IllegalAccessException |
-                 InstantiationException e) {
+				 InstantiationException e) {
 			e.printStackTrace();
 		}
 

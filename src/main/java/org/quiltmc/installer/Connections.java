@@ -21,21 +21,21 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class Connections {
-    public static final String INSTALLER_VERSION = getInstallerVersion();
+	public static final String INSTALLER_VERSION = getInstallerVersion();
 
-    private static String getInstallerVersion() {
-        String version = OrnitheMeta.class.getPackage().getImplementationVersion();
-        if (version != null) {
-            return version;
-        }
+	private static String getInstallerVersion() {
+		String version = OrnitheMeta.class.getPackage().getImplementationVersion();
+		if (version != null) {
+			return version;
+		}
 
-        return "dev";
-    }
+		return "dev";
+	}
 
-    public static URLConnection openConnection(URL url) throws IOException {
-        URLConnection connection = url.openConnection();
-        connection.setRequestProperty("User-Agent", "Ornithe-Installer/"+INSTALLER_VERSION);
+	public static URLConnection openConnection(URL url) throws IOException {
+		URLConnection connection = url.openConnection();
+		connection.setRequestProperty("User-Agent", "Ornithe-Installer/"+INSTALLER_VERSION);
 
-        return connection;
-    }
+		return connection;
+	}
 }

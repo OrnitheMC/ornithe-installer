@@ -17,6 +17,6 @@
 package org.quiltmc.installer.action;
 
 public enum InstallMessageType {
-    SUCCEED,
-    FAIL
+	SUCCEED,
+	FAIL
 }

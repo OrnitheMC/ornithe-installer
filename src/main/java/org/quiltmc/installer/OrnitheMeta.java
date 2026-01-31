@@ -52,22 +52,22 @@ public final class OrnitheMeta {
 					reader.skipValue();
 					continue;
 				}
-                switch (reader.nextName()) {
+				switch (reader.nextName()) {
 					case "latestIntermediaryGeneration":
-                        if (reader.peek() != JsonToken.NUMBER) {
-                            throw new ParseException("Version must be a number", reader);
-                        }
-                        gens[0] = reader.nextInt();
+						if (reader.peek() != JsonToken.NUMBER) {
+							throw new ParseException("Version must be a number", reader);
+						}
+						gens[0] = reader.nextInt();
 						break;
 					case "stableIntermediaryGeneration":
-                        if (reader.peek() != JsonToken.NUMBER) {
-                            throw new ParseException("maven must be a number", reader);
-                        }
-                        gens[1] = reader.nextInt();
+						if (reader.peek() != JsonToken.NUMBER) {
+							throw new ParseException("maven must be a number", reader);
+						}
+						gens[1] = reader.nextInt();
 						break;
 					default:
 						reader.skipValue();
-                }
+				}
 			}
 
 			if (gens[0] == 0) {
@@ -125,22 +125,22 @@ public final class OrnitheMeta {
 						reader.skipValue();
 						continue;
 					}
-	                switch (reader.nextName()) {
+					switch (reader.nextName()) {
 						case "version":
-	                        if (reader.peek() != JsonToken.STRING) {
-	                            throw new ParseException("Version must be a string", reader);
-	                        }
-	                        version = reader.nextString();
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("Version must be a string", reader);
+							}
+							version = reader.nextString();
 							break;
 						case "maven":
-	                        if (reader.peek() != JsonToken.STRING) {
-	                            throw new ParseException("maven must be a string", reader);
-	                        }
-	                        maven = reader.nextString();
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("maven must be a string", reader);
+							}
+							maven = reader.nextString();
 							break;
 						case "stable":
 							reader.nextBoolean(); // TODO
-	                }
+					}
 				}
 
 				if (version == null) {
