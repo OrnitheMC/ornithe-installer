@@ -16,6 +16,8 @@
 
 package org.quiltmc.installer;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
@@ -50,10 +52,21 @@ public final class OsPaths {
 			return homeDir.resolve(MAC_LIBRARY)
 					.resolve(MAC_APPLICATION_SUPPORT)
 					.resolve("minecraft");
-		}
+		} else {
+			// Assume Linux-like directory as a fallback
+			Path dir = homeDir.resolve(DOT_MINECRAFT);
 
-		// Assume Linux-like directory as a fallback
-		return homeDir.resolve(DOT_MINECRAFT);
+			if (!Files.exists(dir)) {
+				// try flatpack location
+				Path fpdir = homeDir.resolve(".var").resolve("app").resolve("com.mojang.Minecraft").resolve(DOT_MINECRAFT);
+
+				if (Files.isDirectory(fpdir)) {
+					dir = fpdir;
+				}
+			}
+
+			return dir;
+		}
 	}
 
 	public static Path getUserDataDir() {
