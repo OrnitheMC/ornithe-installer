@@ -53,19 +53,20 @@ public final class OrnitheMeta {
 					continue;
 				}
                 switch (reader.nextName()) {
-                    case "latestIntermediaryGeneration" -> {
+					case "latestIntermediaryGeneration":
                         if (reader.peek() != JsonToken.NUMBER) {
                             throw new ParseException("Version must be a number", reader);
                         }
                         gens[0] = reader.nextInt();
-                    }
-                    case "stableIntermediaryGeneration" -> {
+						break;
+					case "stableIntermediaryGeneration":
                         if (reader.peek() != JsonToken.NUMBER) {
                             throw new ParseException("maven must be a number", reader);
                         }
                         gens[1] = reader.nextInt();
-                    }
-                    default -> reader.skipValue();
+						break;
+					default:
+						reader.skipValue();
                 }
 			}
 
@@ -125,19 +126,20 @@ public final class OrnitheMeta {
 						continue;
 					}
 	                switch (reader.nextName()) {
-	                    case "version" -> {
+						case "version":
 	                        if (reader.peek() != JsonToken.STRING) {
 	                            throw new ParseException("Version must be a string", reader);
 	                        }
 	                        version = reader.nextString();
-	                    }
-	                    case "maven" -> {
+							break;
+						case "maven":
 	                        if (reader.peek() != JsonToken.STRING) {
 	                            throw new ParseException("maven must be a string", reader);
 	                        }
 	                        maven = reader.nextString();
-	                    }
-	                    case "stable" -> reader.nextBoolean(); // TODO
+							break;
+						case "stable":
+							reader.nextBoolean(); // TODO
 	                }
 				}
 
@@ -161,7 +163,7 @@ public final class OrnitheMeta {
 	}
 
 	public static String launchJsonEndpointPath(GameSide side, LoaderType loaderType, String loaderVersion, OptionalInt intermediaryGen, Intermediary intermediary) {
-		return "/v3/versions" + (intermediaryGen.isEmpty() ? "" : ("/gen" + intermediaryGen.getAsInt())) + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
+		return "/v3/versions" + (!intermediaryGen.isPresent() ? "" : ("/gen" + intermediaryGen.getAsInt())) + String.format(side.launchJsonEndpoint(), loaderType.getName(), intermediary.getVersion(), loaderVersion);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -275,7 +277,7 @@ public final class OrnitheMeta {
 		private final ThrowingFunction<JsonReader, T, ParseException> deserializer;
 
 		Endpoint(OptionalInt intermediaryGen, String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {
-			this((intermediaryGen.isEmpty() ? "" : ("/gen" + intermediaryGen.getAsInt())) + endpointPath, deserializer);
+			this((!intermediaryGen.isPresent() ? "" : ("/gen" + intermediaryGen.getAsInt())) + endpointPath, deserializer);
 		}
 
 		Endpoint(String endpointPath, ThrowingFunction<JsonReader, T, ParseException> deserializer) {

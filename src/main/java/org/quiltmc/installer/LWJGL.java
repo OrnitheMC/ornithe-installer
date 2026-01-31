@@ -27,11 +27,14 @@ public class LWJGL {
 	}
 
 	public String getUid() {
-		return switch (this.getMajorVersion()) {
-			case "2" -> "org.lwjgl";
-			case "3" -> "org.lwjgl3";
-			default -> throw new IllegalArgumentException("unknown major LWJGL version " + this.getMajorVersion());
-		};
+		switch (this.getMajorVersion()) {
+			case "2":
+				return "org.lwjgl";
+			case "3":
+				return "org.lwjgl3";
+			default:
+				throw new IllegalArgumentException("unknown major LWJGL version " + this.getMajorVersion());
+		}
 	}
 
 	public String getVersion() {

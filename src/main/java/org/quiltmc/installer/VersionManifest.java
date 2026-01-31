@@ -46,7 +46,7 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 	public static CompletableFuture<VersionManifest> create(OptionalInt intermediaryGen) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				URL url = new URL(intermediaryGen.isEmpty()
+				URL url = new URL(!intermediaryGen.isPresent()
 					? LAUNCHER_META_URL
 					: String.format(LAUNCHER_META_BY_GEN_URL, intermediaryGen.getAsInt()));
 				URLConnection connection = Connections.openConnection(url);
