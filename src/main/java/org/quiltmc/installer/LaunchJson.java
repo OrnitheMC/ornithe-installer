@@ -16,6 +16,8 @@
 
 package org.quiltmc.installer;
 
+import org.quiltmc.installer.util.Lists;
+import org.quiltmc.installer.util.Maps;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonWriter;
 
@@ -44,12 +46,10 @@ public final class LaunchJson {
 						Map<String,Map<String, String>> downloads = (Map<String, Map<String, String>>) vanillaMap.get("downloads");
 						Map<String, String> client = downloads.get("client");
 
-						Map<String, Object> mainJar = new HashMap<String, Object>() {{
-							put("downloads", new HashMap<String, Object>() {{
-								put("artifact", client);
-							}});
-							put("name", clientName);
-						}};
+						Map<String, Object> mainJar = Maps.of(
+							"downloads", Maps.of("artifact", client),
+							"name", clientName
+						);
 
 						// remove lwjgl as it is handled separately by the pack generator
 						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
@@ -127,7 +127,7 @@ public final class LaunchJson {
 		}
 
 		moddedJsonMap.put("assetIndex",vanilaMap.get("assetIndex"));
-		moddedJsonMap.put("compatibleJavaMajors", Arrays.asList(8, 17, 21, 25));
+		moddedJsonMap.put("compatibleJavaMajors", Lists.of(8, 17, 21, 25));
 		moddedJsonMap.put("compatibleJavaName", "java-runtime-epsilon");
 		moddedJsonMap.put("formatVersion", 1);
 		moddedJsonMap.put("libraries", modifiedLibraries);
@@ -136,11 +136,11 @@ public final class LaunchJson {
 		moddedJsonMap.put("minecraftArguments", minecraftArguments);
 		moddedJsonMap.put("name", "Minecraft");
 		moddedJsonMap.put("releaseTime", vanilaMap.get("releaseTime"));
-		moddedJsonMap.put("requires", Collections.singletonList(
-                new HashMap<String, String>() {{
-                        put("suggests","${lwjgl_version}");
-						put("uid","${lwjgl_uid}");
-				}}
+		moddedJsonMap.put("requires", Lists.of(
+                Maps.of(
+                        "suggests", "${lwjgl_version}",
+						"uid", "${lwjgl_uid}"
+				)
         ));
 		moddedJsonMap.put("type", vanilaMap.get("type"));
 		moddedJsonMap.put("uid", "net.minecraft");

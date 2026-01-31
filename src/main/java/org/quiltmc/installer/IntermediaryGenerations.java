@@ -16,17 +16,15 @@
 
 package org.quiltmc.installer;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.quiltmc.installer.OrnitheMeta.Endpoint;
+import org.quiltmc.installer.util.Sets;
 
 public class IntermediaryGenerations {
 
 	static {
 		try {
 			Endpoint<int[]> endpoint = OrnitheMeta.intermediaryGenerationsEndpoint();
-			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, new HashSet<Endpoint<?>>(){{add(endpoint);}}).get();
+			OrnitheMeta meta = OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, Sets.of(endpoint)).get();
 			int[] gens = meta.getEndpoint(endpoint);
 
 			latest = gens[0];

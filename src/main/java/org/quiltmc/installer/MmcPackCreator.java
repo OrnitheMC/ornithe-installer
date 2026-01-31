@@ -16,6 +16,7 @@
 
 package org.quiltmc.installer;
 
+import org.quiltmc.installer.util.Maps;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.parsers.json.JsonToken;
 import org.quiltmc.parsers.json.JsonWriter;
@@ -25,7 +26,6 @@ import java.awt.datatransfer.StringSelection;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -221,11 +221,11 @@ public class MmcPackCreator {
 
 			Files.write(instanceZipRoot.resolve("patches").resolve(uid + ".json"),
 					String.format(patch, name, url, libName, uid, version).getBytes(StandardCharsets.UTF_8));
-			components.add(new HashMap<String, Object>() {{
-				put("cachedName", libName);
-				put("cachedVersion", version);
-				put("uid", uid);
-			}});
+			components.add(Maps.of(
+				"cachedName", libName,
+				"cachedVersion", version,
+				"uid", uid
+			));
 		}
 
 
