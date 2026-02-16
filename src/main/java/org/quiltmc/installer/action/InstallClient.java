@@ -160,10 +160,6 @@ public final class InstallClient extends Action<InstallMessageType> {
 			 * As long as the jar file exists of the same name the launcher won't complain.
 			 */
 
-			// Make our pretender jar
-			makePretenderJar(vanillaProfileDir, vanillaProfileName);
-			makePretenderJar(profileDir, profileName);
-
 			// Write the launch json
 			writeLaunchJson(vanillaProfileJson, vanillaLaunchJson);
 			writeLaunchJson(profileJson, launchJson);
@@ -195,16 +191,6 @@ public final class InstallClient extends Action<InstallMessageType> {
 		}
 		try {
 			Files.createDirectories(dir);
-		} catch (IOException e) {
-			throw new UncheckedIOException(e); // Handle via exceptionally
-		}
-	}
-
-	private static void makePretenderJar(Path dir, String profileName) {
-		try {
-			Files.createFile(dir.resolve(profileName + ".jar"));
-		} catch (FileAlreadyExistsException ignore) {
-			// Pretender jar already exists
 		} catch (IOException e) {
 			throw new UncheckedIOException(e); // Handle via exceptionally
 		}
