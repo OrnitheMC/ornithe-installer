@@ -36,7 +36,7 @@ public final class LaunchJson {
 
 	@SuppressWarnings("unchecked")
 	public static CompletableFuture<String> getMmcJson(VersionManifest.Version gameVersion, OptionalInt intermediaryGen, Intermediary intermediary, LoaderType loaderType, String loaderVersion){
-		return LaunchJson.get(gameVersion).thenCombine(LaunchJson.get(GameSide.CLIENT, gameVersion, intermediaryGen, intermediary, loaderType, loaderVersion),
+		return LaunchJson.get(gameVersion, intermediaryGen).thenCombine(LaunchJson.get(GameSide.CLIENT, gameVersion, intermediaryGen, intermediary, loaderType, loaderVersion),
 				(vanillaJson, moddedJson) -> {
 					try {
 						Map<String, Object> vanillaMap = (Map<String, Object>) Gsons.read(JsonReader.json(vanillaJson));
@@ -149,10 +149,14 @@ public final class LaunchJson {
 		return moddedJsonMap;
 	}
 
+	private static String vanillaProfileName(VersionManifest.Version gameVersion, OptionalInt intermediaryGen) {
+		return String.format("%s-gen%d", gameVersion.id(), intermediaryGen.orElseGet(IntermediaryGenerations::stable));
+	}
+
 	/**
 	 * @return the launch json for a vanilla mc instance
 	 */
-	public static CompletableFuture<String> get(VersionManifest.Version gameVersion) {
+	public static CompletableFuture<String> get(VersionManifest.Version gameVersion, OptionalInt intermediaryGen) {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				URL url = new URL(gameVersion.url());
@@ -164,10 +168,10 @@ public final class LaunchJson {
 					map = (Map<String, Object>) Gsons.read(JsonReader.json(input));
 				}
 
-				// add the -vanilla suffix to the vanilla json 'cause
+				// add the -gen<gen> suffix to the vanilla json 'cause
 				// we use a different version manifest than mojang and
 				// some version ids can differ from the official ones
-				map.put("id", String.format("%s-vanilla", gameVersion.id()));
+				map.put("id", vanillaProfileName(gameVersion, intermediaryGen));
 
 				StringWriter writer = new StringWriter();
 				Gsons.write(JsonWriter.json(writer), map);
@@ -219,6 +223,9 @@ public final class LaunchJson {
 			if (map == null) {
 				throw new RuntimeException("Read meta json is null?");
 			}
+
+			// set profile to inherit from here since we generate our own vanilla profile
+			map.put("inheritsFrom", vanillaProfileName(gameVersion, intermediaryGen));
 
 			// we apply the library upgrades only to the Ornithe instance, not the Vanilla instance
 			OrnitheMeta.Endpoint<List<Map<String, String>>> libraryUpgradesEndpoint = OrnitheMeta.libraryUpgradesEndpoint(intermediaryGen, gameVersion.id());
