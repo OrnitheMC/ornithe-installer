@@ -51,10 +51,6 @@ public final class LaunchJson {
 							"name", clientName
 						);
 
-						// remove lwjgl as it is handled separately by the pack generator
-						List<Map<String, String>> vanillaLibraries = (List<Map<String, String>>) vanillaMap.get("libraries");
-						vanillaLibraries.removeIf(lib -> lib.get("name").contains("org.lwjgl"));
-
 						List<String> traits = new ArrayList<>();
 						if (((String) vanillaMap.get("mainClass")).contains("launchwrapper")) {
 							traits.add("texturepacks");
@@ -95,7 +91,7 @@ public final class LaunchJson {
 						Gsons.write(
 								JsonWriter.json(writer),
 								buildPackJsonMap(
-										vanillaMap, vanillaLibraries, minecraftArguments, traits, jvmArguments, mainJar, gameVersion.id()
+										vanillaMap, minecraftArguments, traits, jvmArguments, mainJar, gameVersion.id()
 								)
 						);
 
@@ -110,7 +106,6 @@ public final class LaunchJson {
 
 	private static Map<String, Object> buildPackJsonMap(
 			Map<String, Object> vanilaMap,
-			List<Map<String, String>> modifiedLibraries,
 			String minecraftArguments,
 			List<String> traits,
 			List<Object> jvmArguments,
@@ -130,7 +125,7 @@ public final class LaunchJson {
 		moddedJsonMap.put("compatibleJavaMajors", Lists.of(8, 17, 21, 25));
 		moddedJsonMap.put("compatibleJavaName", "java-runtime-epsilon");
 		moddedJsonMap.put("formatVersion", 1);
-		moddedJsonMap.put("libraries", modifiedLibraries);
+		moddedJsonMap.put("libraries", vanilaMap.get("libraries"));
 		moddedJsonMap.put("mainClass", vanilaMap.get("mainClass"));
 		moddedJsonMap.put("mainJar", mainJar);
 		moddedJsonMap.put("minecraftArguments", minecraftArguments);
