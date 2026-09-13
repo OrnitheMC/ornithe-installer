@@ -37,3 +37,4 @@ $RECYCLE.BIN/
 # macOS
 .DS_Store
 .profileconfig.json
+gradle.properties

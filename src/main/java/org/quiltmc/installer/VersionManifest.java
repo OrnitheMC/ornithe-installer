@@ -36,7 +36,7 @@ import org.quiltmc.parsers.json.JsonToken;
  */
 // TODO: Abstract to another library for sharing logic with meta?
 public final class VersionManifest implements Collection<VersionManifest.Version> {
-	private static final String LAUNCHER_META_URL = "https://ornithemc.net/mc-versions/version_manifest.json";
+	private static final String LAUNCHER_META_URL = "https://ornithemc.net/mc-versions/gen2/version_manifest.json";
 	private static final String LAUNCHER_META_BY_GEN_URL = "https://ornithemc.net/mc-versions/gen2/version_manifest.json";
 
 	private final Version latestRelease;
