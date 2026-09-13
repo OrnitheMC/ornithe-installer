@@ -96,12 +96,13 @@ abstract class AbstractPanel extends JPanel {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
-		manifest.parallelStream().filter(version -> version.type().equals("release")
+		manifest.parallelStream().filter(version -> (version.type().equals("release")
 						|| (version.type().equals("snapshot") && snapshots)
 						|| (version.type().equals("old_beta") && snapshots)
 						|| (version.type().equals("old_alpha") && snapshots)
 						|| (version.type().equals("alpha_server") && snapshots)
 						|| (version.type().equals("classic_server") && snapshots))
+						&& ((GameSide.CLIENT == side && version.hasClientVersion())) || (GameSide.SERVER == side && version.hasServerVersion()))
 				.map(VersionManifest.Version::id)
 				.filter(intermediaryVersions::containsKey)
 				.forEachOrdered(comboBox::addItem);

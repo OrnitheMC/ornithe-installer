@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -147,6 +148,7 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 			String url = null;
 			String time = null;
 			String releaseTime = null;
+			String details = null; // used for getting client and server
 
 			while (reader.hasNext()) {
 				String key = reader.nextName();
@@ -187,6 +189,13 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 
 					releaseTime = reader.nextString();
 					break;
+				case "details":
+					if (reader.peek() != JsonToken.STRING) {
+						throw new ParseException("Version release time must be a string", reader);
+					}
+
+					details = reader.nextString();
+					break;
 				// v2 adds sha1 and complianceLevel, we do not need those
 				default:
 					reader.skipValue();
@@ -194,6 +203,11 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 			}
 
 			reader.endObject();
+			
+			boolean[] clientServer = new boolean[] {false,false};
+			if(details != null) {
+				clientServer = readDetails(details);
+			}
 
 			if (id == null) throw new ParseException("Version id is required", reader);
 			if (type == null) throw new ParseException("Version type is required", reader);
@@ -203,10 +217,44 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 //			if (time == null) throw new ParseException("Version time is required", reader);
 //			if (releaseTime == null) throw new ParseException("Version release time is required", reader);
 
-			versions.put(id, new Version(id, type, url, time, releaseTime));
+			versions.put(id, new Version(id, type, url, time, releaseTime, clientServer[1], clientServer[0]));
 		}
 
 		reader.endArray();
+	}
+	
+	private static boolean[] readDetails(String detailsUrl) throws MalformedURLException, IOException {
+		boolean[] clientServer = new boolean[] {false,false};
+		URL url = new URL(detailsUrl);
+		InputStreamReader stream = new InputStreamReader(Connections.openConnection(url).getInputStream(), StandardCharsets.UTF_8);
+		BufferedReader buf = new BufferedReader(stream);
+		try (JsonReader reader = JsonReader.json(buf)) {
+			if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+				throw new ParseException("Description Meta was invalid type", reader);
+			}
+			reader.beginObject();
+			while (reader.hasNext()) {
+				String key = reader.nextName();
+
+				switch (key) {
+					case "client":
+						if (reader.peek() != JsonToken.BOOLEAN) {
+							throw new ParseException("Description client must be a boolean", reader);
+						}
+						clientServer[0] = reader.nextBoolean();
+						break;
+					case "server":
+						if (reader.peek() != JsonToken.BOOLEAN) {
+							throw new ParseException("Description server must be a boolean", reader);
+						}
+						clientServer[1] = reader.nextBoolean();
+						break;
+				default:
+					reader.skipValue();
+				}
+			}
+		}
+		return clientServer;
 	}
 
 	private VersionManifest(Version latestRelease, Version latestSnapshot, Map<String, Version> versions) {
@@ -326,13 +374,17 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 		private final String url;
 		private final String time;
 		private final String releaseTime;
+		private final boolean serverVer;
+		private final boolean clientVer;
 
-		Version(String id, String type, String url, String time, String releaseTime) {
+		Version(String id, String type, String url, String time, String releaseTime, boolean serverVer, boolean clientVer) {
 			this.id = id;
 			this.type = type;
 			this.url = url;
 			this.time = time;
 			this.releaseTime = releaseTime;
+			this.serverVer = serverVer;
+			this.clientVer = clientVer;
 		}
 
 		public String id() {
@@ -353,6 +405,14 @@ public final class VersionManifest implements Collection<VersionManifest.Version
 
 		public String releaseTime() {
 			return this.releaseTime;
+		}
+		
+		public boolean hasClientVersion() {
+			return clientVer;
+		}
+		
+		public boolean hasServerVersion() {
+			return serverVer;
 		}
 	}
 }
