@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.OsPaths;
 import org.quiltmc.parsers.json.JsonReader;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LaunchJson;
@@ -49,6 +49,7 @@ import org.quiltmc.installer.MmcPackCreator;
 public final class InstallClient extends Action<InstallMessageType> {
 	private final String minecraftVersion;
 	private final LauncherType launcherType;
+	private final GameVersion gameVersion;
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
@@ -61,9 +62,10 @@ public final class InstallClient extends Action<InstallMessageType> {
 	private final boolean copyProfilePath;
 	private Path installDirPath;
 
-	InstallClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+	InstallClient(String minecraftVersion, LauncherType launcherType, GameVersion gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
 		this.minecraftVersion = minecraftVersion;
 		this.launcherType = launcherType;
+		this.gameVersion = gameVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.intermediaryGen = intermediaryGen;
@@ -117,7 +119,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 		 * 7. (Optional) create profile if needed
 		 */
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.gameVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
 
 		installationInfoFuture.thenCompose(installationInfo -> LaunchJson.get(installationInfo.manifest().getVersion(this.minecraftVersion), this.intermediaryGen).thenCompose(vanillaLaunchJson -> LaunchJson.get(GameSide.CLIENT, installationInfo.manifest().getVersion(this.minecraftVersion), installationInfo.intermediaryGen(), installationInfo.intermediary(), this.loaderType, installationInfo.loaderVersion()).thenAccept(launchJson -> {
 			println("Creating profile launch json");
@@ -205,7 +207,7 @@ public final class InstallClient extends Action<InstallMessageType> {
 	}
 
 	private void installMultimc(Consumer<InstallMessageType> statusTracker) {
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.CLIENT, this.minecraftVersion,this.gameVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
 
 		installationInfoFuture.thenAccept(installationInfo -> {
 			MmcPackCreator.compileMmcZip(

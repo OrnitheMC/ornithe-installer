@@ -178,7 +178,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, null, intermediaryGen, null, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, null, loaderType, null, intermediaryGen, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -193,7 +193,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
+					return Action.installClient(minecraftVersion, launcherType, null, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -277,7 +277,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
+				return Action.installClient(minecraftVersion, launcherType, null, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), !options.containsKey("--no-profile"), options.containsKey("--copy-profile-path"));
 			}
 			case "server": {
 				if (split.size() < 1) {
@@ -301,7 +301,7 @@ public final class CliInstaller {
 
 				// At this point all the require arguments have been parsed
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, null, intermediaryGen, null, null, false, false);
+					return Action.installServer(minecraftVersion, null, loaderType, null, intermediaryGen, null, null, false, false);
 				}
 
 				// Try to parse loader version first
@@ -316,7 +316,7 @@ public final class CliInstaller {
 
 				// No more arguments, just loader version
 				if (split.size() == 0) {
-					return Action.installServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
+					return Action.installServer(minecraftVersion, null, loaderType, loaderVersion, intermediaryGen, null, null, false, false);
 				}
 
 				// There are some additional options
@@ -399,7 +399,7 @@ public final class CliInstaller {
 					}
 				}
 
-				return Action.installServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
+				return Action.installServer(minecraftVersion, null, loaderType, loaderVersion, intermediaryGen, null, options.get("--install-dir"), options.containsKey("--create-scripts"), options.containsKey("--download-server"));
 			}
 			default:
 				System.err.printf("Invalid side \"%s\", expected \"client\" or \"server\"%n", arg);

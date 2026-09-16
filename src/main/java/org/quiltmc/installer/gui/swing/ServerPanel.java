@@ -31,6 +31,7 @@ import javax.swing.*;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
@@ -81,7 +82,7 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 				// Versions are already loaded, repopulate the combo box
 				if (this.manifest() != null) {
 					this.showSnapshots = e.getStateChange() == ItemEvent.SELECTED;
-					populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+					populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.gameVersions(), this.intermediaryVersions(), this.showSnapshots);
 				}
 			});
 		}
@@ -114,13 +115,13 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 				// Versions are already loaded, repopulate the combo box
 				if (this.loaderVersions() != null) {
 					this.showLoaderBetas = e.getStateChange() == ItemEvent.SELECTED;
-					populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 			});
 
 			this.loaderTypeSelector.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
-					populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 			});
 		}
@@ -175,18 +176,26 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 		}
 	}
 
+	GameVersion minecraftVersion() {
+		return this.gameVersions().get(this.minecraftVersionSelector.getSelectedItem());
+	}
+
+	Intermediary intermediaryVersion() {
+		return this.intermediaryVersions().get(this.minecraftVersionSelector.getSelectedItem());
+	}
+
 	@Override
 	LoaderType loaderType() {
 		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
-		super.receiveVersions(GameSide.SERVER, manifest, loaderVersions, intermediaryVersions);
+	void receiveVersions(VersionManifest manifest, List<GameVersion> gameVersions, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
+		super.receiveVersions(GameSide.SERVER, manifest, gameVersions, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(GameSide.SERVER, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+		populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.gameVersions(), this.intermediaryVersions(), this.showSnapshots);
 		updateFlags();
 		this.showSnapshotsCheckBox.setEnabled(true);
-		populateLoaderVersions(GameSide.SERVER, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+		populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);
 
 		this.installButton.setText(Localization.get("gui.install"));
@@ -216,16 +225,18 @@ final class ServerPanel extends AbstractPanel implements Consumer<InstallMessage
 			return;
 		}
 
-		String minecraftVersion = (String) this.minecraftVersionSelector.getSelectedItem();
+		GameVersion minecraftVersion = this.minecraftVersion();
+		Intermediary intermediary = this.intermediaryVersion();
 		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LoaderType loaderType = this.loaderType();
 
 		InstallServer action = Action.installServer(
+				minecraftVersion.getId(),
 				minecraftVersion,
 				loaderType,
 				loaderVersion,
 				OptionalInt.empty(),
-				this.intermediaryVersions().get(minecraftVersion),
+				intermediary,
 				this.installLocation.getText(),
 				this.generateLaunchScripts,
 				this.downloadServer

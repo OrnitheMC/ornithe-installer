@@ -53,6 +53,7 @@ import java.util.zip.ZipOutputStream;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.Connections;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Gsons;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LaunchJson;
@@ -68,6 +69,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 	public static final String SERVICES_DIR = "META-INF/services/";
 
 	private final String minecraftVersion;
+	private final GameVersion gameVersion;
 	private final LoaderType loaderType;
 	@Nullable
 	private final String loaderVersion;
@@ -80,8 +82,9 @@ public final class InstallServer extends Action<InstallMessageType> {
 	private MinecraftInstallation.InstallationInfo installationInfo;
 	private Path installedDir;
 
-	InstallServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+	InstallServer(String minecraftVersion, GameVersion gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
 		this.minecraftVersion = minecraftVersion;
+		this.gameVersion = gameVersion;
 		this.loaderType = loaderType;
 		this.loaderVersion = loaderVersion;
 		this.intermediaryGen = intermediaryGen;
@@ -112,7 +115,7 @@ public final class InstallServer extends Action<InstallMessageType> {
 			println(String.format("Installing server launcher for %s with loader %s", this.minecraftVersion, this.loaderVersion));
 		}
 
-		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
+		CompletableFuture<MinecraftInstallation.InstallationInfo> installationInfoFuture = MinecraftInstallation.getInfo(GameSide.SERVER, this.minecraftVersion, this.gameVersion, this.loaderType, this.loaderVersion, this.intermediaryGen, this.intermediary);
 
 		installationInfoFuture.thenCompose(installationInfo -> {
 			this.installationInfo = installationInfo;

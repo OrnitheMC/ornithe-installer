@@ -16,6 +16,7 @@
 
 package org.quiltmc.installer.gui.swing;
 
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
@@ -58,12 +59,14 @@ public final class SwingInstaller extends JFrame {
 			// Start version lookup before we show the window
 			// Lookup loader and intermediary
 			Set<OrnitheMeta.Endpoint<?>> endpoints = new HashSet<>();
+			endpoints.add(OrnitheMeta.gameVersionsEndpoint(intermediaryGen));
 			for (LoaderType type : LoaderType.values()) {
 				endpoints.add(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, type));
 			}
 			endpoints.add(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
 			OrnitheMeta.create(OrnitheMeta.ORNITHE_META_URL, endpoints).thenAcceptBothAsync(VersionManifest.create(intermediaryGen), ((quiltMeta, manifest) -> {
+				List<GameVersion> gameVersions = quiltMeta.getEndpoint(OrnitheMeta.gameVersionsEndpoint(intermediaryGen));
 				Map<LoaderType, List<String>> loaderVersions = new EnumMap<>(LoaderType.class);
 				for (LoaderType type : LoaderType.values()) {
 					loaderVersions.put(type, quiltMeta.getEndpoint(OrnitheMeta.loaderVersionsEndpoint(intermediaryGen, type)).stream().filter(v -> {
@@ -77,8 +80,8 @@ public final class SwingInstaller extends JFrame {
 				}
 				List<Intermediary> intermediaryVersions = quiltMeta.getEndpoint(OrnitheMeta.intermediaryVersionsEndpoint(intermediaryGen));
 
-				this.clientPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
-				this.serverPanel.receiveVersions(manifest, loaderVersions, intermediaryVersions);
+				this.clientPanel.receiveVersions(manifest, gameVersions, loaderVersions, intermediaryVersions);
+				this.serverPanel.receiveVersions(manifest, gameVersions, loaderVersions, intermediaryVersions);
 			})).exceptionally(e -> {
 				e.printStackTrace();
 				AbstractPanel.displayError(this, e);

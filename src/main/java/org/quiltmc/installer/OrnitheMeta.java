@@ -96,9 +96,81 @@ public final class OrnitheMeta {
 	}
 
 	/**
+	 * An endpoint for game versions.
+	 */
+	public static final Endpoint<List<GameVersion>> gameVersionsEndpoint(OptionalInt intermediaryGen) {
+		return deduplicate(new Endpoint<>(intermediaryGen, "/game", reader -> {
+			List<GameVersion> ret = new ArrayList<>();
+
+			if (reader.peek() != JsonToken.BEGIN_ARRAY) {
+				throw new ParseException("Game versions must be in an array", reader);
+			}
+
+			reader.beginArray();
+
+			while (reader.hasNext()) {
+				if (reader.peek() != JsonToken.BEGIN_OBJECT) {
+					throw new ParseException("Game version entry must be an object", reader);
+				}
+
+				reader.beginObject();
+
+				String version = null;
+				String environment = null;
+				Boolean stable = null;
+
+				while (reader.hasNext()) {
+					if (reader.peek() != JsonToken.NAME) {
+						reader.skipValue();
+						continue;
+					}
+					switch (reader.nextName()) {
+						case "version":
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("Version must be a string", reader);
+							}
+							version = reader.nextString();
+							break;
+						case "environment":
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("Environment must be a string", reader);
+							}
+							environment = reader.nextString();
+							break;
+						case "stable":
+							if (reader.peek() != JsonToken.BOOLEAN) {
+								throw new ParseException("stable must be a boolean", reader);
+							}
+							stable = reader.nextBoolean();
+							break;
+					}
+				}
+
+				if (version == null) {
+					throw new ParseException("Game version entry does not have a version field", reader);
+				}
+
+				if (environment == null) {
+					throw new ParseException("Game version entry does not have an environment field", reader);
+				}
+
+				if (stable == null) {
+					throw new ParseException("Game version entry does not have a stable field", reader);
+				}
+
+				ret.add(new GameVersion(version, environment, stable));
+
+				reader.endObject();
+			}
+
+			reader.endArray();
+
+			return ret;
+		}));
+	}
+
+	/**
 	 * An endpoint for intermediary versions.
-	 *
-	 * <p>The returned map has the version as the key and the maven artifact as the value
 	 */
 	public static final Endpoint<List<Intermediary>> intermediaryVersionsEndpoint(OptionalInt intermediaryGen) {
 		return deduplicate(new Endpoint<>(intermediaryGen, "/intermediary", reader -> {
@@ -119,6 +191,7 @@ public final class OrnitheMeta {
 
 				String version = null;
 				String maven = null;
+				String gameVersion = null;
 
 				while (reader.hasNext()) {
 					if (reader.peek() != JsonToken.NAME) {
@@ -138,8 +211,12 @@ public final class OrnitheMeta {
 							}
 							maven = reader.nextString();
 							break;
-						case "stable":
-							reader.nextBoolean(); // TODO
+						case "gameVersion":
+							if (reader.peek() != JsonToken.STRING) {
+								throw new ParseException("Game version must be a string", reader);
+							}
+							gameVersion = reader.nextString();
+							break;
 					}
 				}
 
@@ -151,7 +228,11 @@ public final class OrnitheMeta {
 					throw new ParseException("Intermediary version entry does not have a maven field", reader);
 				}
 
-				ret.add(new Intermediary(version, maven));
+				if (gameVersion == null) {
+					throw new ParseException("Intermediary version entry does not have a gameVersion field", reader);
+				}
+
+				ret.add(new Intermediary(version, maven, gameVersion));
 
 				reader.endObject();
 			}

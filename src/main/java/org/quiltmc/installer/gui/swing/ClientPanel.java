@@ -77,7 +77,7 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 				// Versions are already loaded, repopulate the combo box
 				if (this.manifest() != null) {
 					this.showSnapshots = e.getStateChange() == ItemEvent.SELECTED;
-					populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+					populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.gameVersions(), this.intermediaryVersions(), this.showSnapshots);
 				}
 			});
 		}
@@ -123,13 +123,13 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 			this.showLoaderBetasCheckBox.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
 					this.showLoaderBetas = e.getStateChange() == ItemEvent.SELECTED;
-					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 			});
 
 			this.loaderTypeSelector.addItemListener(e -> {
 				if (this.loaderVersions() != null) {
-					populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+					populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 				}
 			});
 		}
@@ -209,18 +209,20 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 
 
 	private void install(ActionEvent event) {
-		String minecraftVersion = (String) this.minecraftVersionSelector.getSelectedItem();
+		GameVersion minecraftVersion = this.minecraftVersion();
+		Intermediary intermediary = this.intermediaryVersion();
 		String loaderVersion = (String) this.loaderVersionSelector.getSelectedItem();
 		LauncherType launcherType = this.launcherType();
 		LoaderType loaderType = this.loaderType();
 
 		Action<InstallMessageType> action = Action.installClient(
-				minecraftVersion,
+				minecraftVersion.getId(),
 				launcherType,
+				minecraftVersion,
 				loaderType,
 				loaderVersion,
 				OptionalInt.empty(),
-				this.intermediaryVersions().get(minecraftVersion),
+				intermediary,
 				this.installLocation.getText(),
 				this.generateProfile,
 				this.copyProfilePath
@@ -251,6 +253,14 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 		}
 	}
 
+	GameVersion minecraftVersion() {
+		return this.gameVersions().get(this.minecraftVersionSelector.getSelectedItem());
+	}
+
+	Intermediary intermediaryVersion() {
+		return this.intermediaryVersions().get(this.minecraftVersionSelector.getSelectedItem());
+	}
+
 	LauncherType launcherType() {
 		return ((LauncherLabel) this.launcherTypeSelector.getSelectedItem()).type;
 	}
@@ -260,12 +270,12 @@ final class ClientPanel extends AbstractPanel implements Consumer<InstallMessage
 		return ((LoaderLabel) this.loaderTypeSelector.getSelectedItem()).type;
 	}
 
-	void receiveVersions(VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
-		super.receiveVersions(GameSide.CLIENT, manifest, loaderVersions, intermediaryVersions);
+	void receiveVersions(VersionManifest manifest, List<GameVersion> gameVersions, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
+		super.receiveVersions(GameSide.CLIENT, manifest, gameVersions, loaderVersions, intermediaryVersions);
 
-		populateMinecraftVersions(GameSide.CLIENT, this.minecraftVersionSelector, this.manifest(), this.intermediaryVersions(), this.showSnapshots);
+		populateMinecraftVersions(this.minecraftVersionSelector, this.manifest(), this.gameVersions(), this.intermediaryVersions(), this.showSnapshots);
 		this.showSnapshotsCheckBox.setEnabled(true);
-		populateLoaderVersions(GameSide.CLIENT, this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
+		populateLoaderVersions(this.loaderVersionSelector, this.loaderVersions(this.loaderType()), this.showLoaderBetas);
 		this.showLoaderBetasCheckBox.setEnabled(true);
 
 		this.installButton.setText(Localization.get("gui.install"));

@@ -20,6 +20,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,7 @@ import javax.swing.event.HyperlinkEvent;
 
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.GameSide;
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LoaderType;
 import org.quiltmc.installer.Localization;
@@ -45,6 +47,8 @@ abstract class AbstractPanel extends JPanel {
 	final SwingInstaller gui;
 	@Nullable
 	private VersionManifest manifest;
+	@Nullable
+	private Map<String, GameVersion> gameVersions;
 	@Nullable
 	private Map<LoaderType, List<String>> loaderVersions;
 	@Nullable
@@ -62,17 +66,26 @@ abstract class AbstractPanel extends JPanel {
 		return rowPanel;
 	}
 
-	void receiveVersions(GameSide side, VersionManifest manifest, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
+	void receiveVersions(GameSide side, VersionManifest manifest, List<GameVersion> gameVersions, Map<LoaderType, List<String>> loaderVersions, List<Intermediary> intermediaryVersions) {
 		this.manifest = manifest;
+		this.gameVersions = gameVersions.stream()
+				.filter(GameVersion::isStable)
+				.filter(version -> version.hasSide(side))
+				.collect(Collectors.toMap(GameVersion::getId, Function.identity()));
 		this.loaderVersions = loaderVersions;
 		this.intermediaryVersions = intermediaryVersions.stream()
-				.filter(intermediary -> side.versionMatches(intermediary.getVersion()))
-				.collect(Collectors.toMap(intermediary -> side.stripFromVersion(intermediary.getVersion()), Function.identity()));
+				.filter(intermediary -> this.gameVersions.containsKey(intermediary.getGameVersion()))
+				.collect(Collectors.toMap(Intermediary::getGameVersion, Function.identity()));
 	}
 
 	@Nullable
 	VersionManifest manifest() {
 		return this.manifest;
+	}
+
+	@Nullable
+	public Map<String, GameVersion> gameVersions() {
+		return this.gameVersions;
 	}
 
 	@Nullable
@@ -92,24 +105,26 @@ abstract class AbstractPanel extends JPanel {
 
 	abstract LoaderType loaderType();
 
-	static void populateMinecraftVersions(GameSide side, JComboBox<String> comboBox, VersionManifest manifest, Map<String, Intermediary> intermediaryVersions, boolean snapshots) {
+	static void populateMinecraftVersions(JComboBox<String> comboBox, VersionManifest manifest, Map<String, GameVersion> gameVersions, Map<String, Intermediary> intermediaryVersions, boolean snapshots) {
 		// Setup the combo box for Minecraft version selection
 		comboBox.removeAllItems();
 
-		manifest.parallelStream().filter(version -> version.type().equals("release")
+		manifest.parallelStream()
+				.filter(version -> gameVersions.containsKey(version.id()))
+				.filter(version -> version.type().equals("release")
 						|| (version.type().equals("snapshot") && snapshots)
 						|| (version.type().equals("old_beta") && snapshots)
 						|| (version.type().equals("old_alpha") && snapshots)
 						|| (version.type().equals("alpha_server") && snapshots)
 						|| (version.type().equals("classic_server") && snapshots))
 				.map(VersionManifest.Version::id)
-				.filter(intermediaryVersions::containsKey)
+				.filter(intermediaryVersions::containsKey) // TODO: remove for unobf version support
 				.forEachOrdered(comboBox::addItem);
 
 		comboBox.setEnabled(true);
 	}
 
-	static void populateLoaderVersions(GameSide side, JComboBox<String> comboBox, List<String> loaderVersions, boolean betas) {
+	static void populateLoaderVersions(JComboBox<String> comboBox, List<String> loaderVersions, boolean betas) {
 		comboBox.removeAllItems();
 
 		for (String loaderVersion : loaderVersions) {

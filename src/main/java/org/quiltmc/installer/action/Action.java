@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
 import org.quiltmc.installer.Localization;
 import org.quiltmc.installer.CliInstaller;
+import org.quiltmc.installer.GameVersion;
 import org.quiltmc.installer.Intermediary;
 import org.quiltmc.installer.LauncherType;
 import org.quiltmc.installer.LoaderType;
@@ -92,12 +93,12 @@ public abstract class Action<M> {
 		return new ListVersions(loaderType, intermediaryGen, minecraftSnapshots, loaderBetas);
 	}
 
-	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
-		return new InstallClient(minecraftVersion, launcherType, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, generateProfile, copyProfilePath);
+	public static InstallClient installClient(String minecraftVersion, LauncherType launcherType, @Nullable GameVersion gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, @Nullable String installDir, boolean generateProfile, boolean copyProfilePath) {
+		return new InstallClient(minecraftVersion, launcherType, gameVersion, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, generateProfile, copyProfilePath);
 	}
 
-	public static InstallServer installServer(String minecraftVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
-		return new InstallServer(minecraftVersion, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, createScripts, installServer);
+	public static InstallServer installServer(String minecraftVersion, @Nullable GameVersion gameVersion, LoaderType loaderType, @Nullable String loaderVersion, OptionalInt intermediaryGen, @Nullable Intermediary intermediary, String installDir, boolean createScripts, boolean installServer) {
+		return new InstallServer(minecraftVersion, gameVersion, loaderType, loaderVersion, intermediaryGen, intermediary, installDir, createScripts, installServer);
 	}
 
 	static void println(String message) {

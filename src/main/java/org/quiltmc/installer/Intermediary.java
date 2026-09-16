@@ -20,10 +20,12 @@ public class Intermediary {
 
 	private final String version;
 	private final String maven;
+	private final String gameVersion;
 
-	public Intermediary(String version, String maven) {
+	public Intermediary(String version, String maven, String gameVersion) {
 		this.version = version;
 		this.maven = maven;
+		this.gameVersion = gameVersion;
 	}
 
 	public String getVersion() {
@@ -32,5 +34,9 @@ public class Intermediary {
 
 	public String getMavenNotation() {
 		return this.maven;
+	}
+
+	public String getGameVersion() {
+		return this.gameVersion;
 	}
 }
